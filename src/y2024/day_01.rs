@@ -29,10 +29,12 @@ fn make_two_lists (content: &[&str]) -> Result<(Vec<usize>, Vec<usize>)> {
     });
 
     let (v_left, v_right): (Vec<_>, Vec<_>) = pairs.unzip();
-    assert_eq!(v_left.len(), content.len());
-    assert_eq!(v_right.len(), content.len());
-
-    Ok((v_left, v_right))
+    if v_left.len() != content.len() || v_right.len() != content.len() {
+        bail!("Cannot parse content")
+    }
+    else {
+        Ok((v_left, v_right))
+    }
 }
 
 fn part_a (content: &[&str]) -> Result<usize> {

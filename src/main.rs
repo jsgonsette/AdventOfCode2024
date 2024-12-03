@@ -8,6 +8,7 @@ use anyhow::*;
 use std::result::Result::Ok;
 use std::time::Duration;
 use crate::y2024::Y2024;
+use crate::y2022::Y2022;
 
 /// A function solving the problem of the day.
 /// * Input param is a vector of strings (input file)
@@ -28,8 +29,8 @@ type Solution = usize;
 
 fn main() -> Result<()> {
 
-    let y2024 = Y2024;
-    solve_year(y2024);
+    solve_year(Y2022);
+    solve_year(Y2024);
 
     Ok(())
 }

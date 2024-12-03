@@ -1,5 +1,4 @@
 use anyhow::*;
-use num::Signed;
 
 const TEST: &str = "\
 7 6 4 2 1
@@ -10,65 +9,93 @@ const TEST: &str = "\
 1 3 6 7 9
 ";
 
+/// Checks that a sequence of values is safe
+struct SafetyChecker {
+    is_increasing: Option<bool>,
+    previous: Option<u32>,
+}
+
+impl SafetyChecker {
+    pub fn new() -> SafetyChecker {
+        SafetyChecker {
+            is_increasing: None,
+            previous: None,
+        }
+    }
+
+    /// Return `true` if the new provided item is safe regarding the previous value
+    pub fn process_next (&mut self, item: u32) -> bool {
+        let is_safe = match (self.previous, self.is_increasing) {
+            (None, _) => {
+                true
+            },
+            (Some(first), None) => {
+                self.is_increasing = Some (item > first);
+                let delta = item as i32 - first as i32;
+                delta.abs() >= 1 && delta.abs() <= 3
+            }
+            (Some (p), Some (is_increasing)) => {
+                let delta = item as i32 - p as i32;
+                let delta_increase = delta > 0;
+                delta.abs() >= 1 && delta.abs() <= 3 && delta_increase == is_increasing
+            }
+        };
+
+        self.previous = Some(item);
+        is_safe
+    }
+}
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-fn make_levels (row: &str) -> Vec<u32> {
+/// Parse a row and try to make a vector of u32 out of it/
+fn make_levels (row: &str) -> Result<Vec<u32>> {
     let items = row.split(' ');
-    items.map(|x| x.parse::<u32>().unwrap()).collect()
+
+    let vr: Result<Vec<u32>, _> = items.map(|x| x.parse::<u32>()).collect();
+    vr.map_err(|_e| anyhow!("Cannot parse row: {}", row))
 }
 
-fn is_safe (levels: &[u32]) -> bool {
+/// Check that the sequence of values `levels` is safe
+fn is_safe<'a, I> (levels: I) -> bool
+where I: IntoIterator<Item = &'a u32> {
 
-    if levels.len() <= 1 { return true }
-    let is_increasing = levels [1] > levels[0];
-
-    let r = levels.iter().skip(1).fold ((true, levels [0]), |(safe, level), next_level| {
-
-        let diff = (*next_level as i32 - level as i32).abs() as u32;
-        let next_increasing = *next_level > level;
-        let next_safe = diff <= 3 && diff >= 1;
-        (safe && next_safe && (next_increasing == is_increasing), *next_level)
-    });
-
-    r.0
+    let mut checker = SafetyChecker::new();
+    levels.into_iter().all(| value | {
+        checker.process_next(*value)
+    })
 }
 
 fn part_a (content: &[&str]) -> Result<usize> {
 
-    let mut sum = 0;
-    for row in content {
-        let levels = make_levels(row);
-        let safe = is_safe(&levels);
-        if safe { sum += 1 }
-    }
-    Ok(sum)
+    let sum_or_err: Result<Vec<usize>> = content.iter().map(|row| {
+        let levels = make_levels(row)?;
+        Ok (if is_safe (&levels) { 1usize } else { 0 })
+    }).collect ();
+
+    sum_or_err.map (|x| x.iter().copied ().sum())
 }
 
 fn part_b (content: &[&str]) -> Result<usize> {
 
-    let mut sum = 0;
-    for row in content {
+    let sum = content.iter().map(|row| {
 
-        let levels = make_levels(row);
-        let n = levels.len();;
-        let safe = is_safe(&levels);
+        let levels = make_levels(row).unwrap();
+        let n = levels.len ();
 
-        let shrinked = (0usize..levels.len()).map (|idx| {
-            match idx {
-                0 => levels.iter().skip(1).copied ().collect::<Vec<_>>(),
-                x => levels.iter().take (x).chain (
-                    levels.iter ().skip(x+1)).copied().collect::<Vec<_>>(),
-            }
+        let completely_safe = is_safe (&levels);
+
+        let almost_safe = (0..n).any (|idx| {
+           let one_off = levels.iter().take (idx).chain(
+               levels.iter().skip(idx+1)
+           );
+           is_safe (one_off)
         });
 
-       // dbg!(shrinked.clone ().collect::<Vec<_>>());
+        if completely_safe || almost_safe { 1 } else { 0 }
+    }).sum();
 
-        let any_safe = shrinked.into_iter().any (|x| is_safe(x.as_slice()));
-
-        if safe || any_safe { sum += 1 }
-    }
     Ok(sum)
 }
 

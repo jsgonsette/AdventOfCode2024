@@ -54,7 +54,7 @@ fn part_b (content: &[&str]) -> anyhow::Result<usize> {
     Ok(score as usize)
 }
 
-pub fn day_2022_2 (content: &[&str]) -> anyhow::Result<(usize, usize)> {
+pub fn day_2(content: &[&str]) -> anyhow::Result<(usize, usize)> {
 
     debug_assert!(part_a(&split(TEST)).unwrap_or_default() == 15);
     debug_assert!(part_b(&split(TEST)).unwrap_or_default() == 12);
