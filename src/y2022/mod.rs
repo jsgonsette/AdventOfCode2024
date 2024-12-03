@@ -1,4 +1,5 @@
 mod day_02;
+mod day_04;
 
 use crate::{FnDay, Year};
 
@@ -12,6 +13,7 @@ impl Year for Y2022 {
         match day {
             1 => None,
             2 => Some (day_02::day_2),
+            4 => Some (day_04::day_4),
             _ => None,
         }
     }
