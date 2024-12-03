@@ -14,6 +14,7 @@ impl Year for Y2024 {
         match day {
             1 => Some (day_01::day_1),
             2 => Some (day_02::day_2),
+            3 => Some (day_03::day_3),
             _ => None,
         }
     }

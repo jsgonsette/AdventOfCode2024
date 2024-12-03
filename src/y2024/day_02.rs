@@ -1,5 +1,4 @@
 use anyhow::*;
-use num::Signed;
 
 const TEST: &str = "\
 7 6 4 2 1
@@ -52,10 +51,9 @@ fn part_b (content: &[&str]) -> Result<usize> {
     for row in content {
 
         let levels = make_levels(row);
-        let n = levels.len();;
         let safe = is_safe(&levels);
 
-        let shrinked = (0usize..levels.len()).map (|idx| {
+        let shrunk = (0usize..levels.len()).map (|idx| {
             match idx {
                 0 => levels.iter().skip(1).copied ().collect::<Vec<_>>(),
                 x => levels.iter().take (x).chain (
@@ -63,9 +61,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
             }
         });
 
-       // dbg!(shrinked.clone ().collect::<Vec<_>>());
-
-        let any_safe = shrinked.into_iter().any (|x| is_safe(x.as_slice()));
+        let any_safe = shrunk.into_iter().any (|x| is_safe(x.as_slice()));
 
         if safe || any_safe { sum += 1 }
     }
