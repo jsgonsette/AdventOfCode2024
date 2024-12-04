@@ -9,10 +9,13 @@ const TEST: &str = "\
 2-6,4-8
 ";
 
+#[derive(Copy, Clone, Debug)]
 struct Range (u32, u32);
+
 enum RangeState {
     LeftA, LeftB, RightA, RightB
 }
+
 struct RangesParser {
     left_a: u32,
     left_b: u32,
@@ -24,6 +27,10 @@ struct RangesParser {
 impl Range {
     fn is_contained_in (&self, other: &Self) -> bool {
         self.0 >= other.0 && self.1 <= other.1
+    }
+
+    fn overlap (&self, other: &Self) -> bool {
+        self.1 >= other.0 && self.0 <= other.1
     }
 }
 
@@ -41,13 +48,17 @@ impl RangesParser {
     fn process(&mut self, c: char) -> Result<()> {
         let digit = c.to_digit(10);
         match (&self.state, digit) {
-            (RangeState::LeftA, Some (d)) => { self.left_a = self.left_a*10 + d; Ok(()) },
-            (RangeState::LeftB, Some (d)) => { self.left_b = self.left_b*10 + d; Ok(()) },
-            (RangeState::RightA, Some (d)) => { self.right_a = self.right_a*10 + d; Ok(()) },
-            (RangeState::RightB, Some (d)) => { self.right_b = self.right_b*10 + d; Ok(()) },
-            (RangeState::LeftA, None) if c == '-' => { self.state = RangeState::LeftB; Ok(()) },
-            _ => bail!("Invalid character '{}'", c),
-        }
+            (RangeState::LeftA, Some (d)) => { self.left_a = self.left_a*10 + d; },
+            (RangeState::LeftB, Some (d)) => { self.left_b = self.left_b*10 + d;  },
+            (RangeState::RightA, Some (d)) => { self.right_a = self.right_a*10 + d;  },
+            (RangeState::RightB, Some (d)) => { self.right_b = self.right_b*10 + d;  },
+            (RangeState::LeftA, None) if c == '-' => { self.state = RangeState::LeftB;  },
+            (RangeState::RightA, None) if c == '-' => { self.state = RangeState::RightB;  },
+            (RangeState::LeftB, None) if c == ',' => { self.state = RangeState::RightA;  },
+            _ => bail!("Invalid character: '{}'", c),
+        };
+
+        Ok(())
     }
 
     fn left_range (&self) -> Range {
@@ -76,31 +87,39 @@ fn read_ranges (row: &str) -> Result<(Range, Range)> {
 
 fn part_a (content: &[&str]) -> anyhow::Result<usize> {
 
-    let mut total_overlap_count = 0;
+    let mut count = 0;
 
     for row in content.iter() {
         let (left_range, right_range) = read_ranges(row)?;
         if left_range.is_contained_in(&right_range) || right_range.is_contained_in(&left_range) {
-            total_overlap_count += 1;
+            count += 1;
         }
     }
 
-    Ok(total_overlap_count)
+    Ok(count)
 }
 
 fn part_b (content: &[&str]) -> anyhow::Result<usize> {
 
+    let mut count = 0;
 
-    Ok(0)
+    for row in content.iter() {
+        let (left_range, right_range) = read_ranges(row)?;
+        if left_range.overlap(&right_range) {
+            count += 1;
+        }
+    }
+
+    Ok(count)
 }
 
 pub fn day_4(content: &[&str]) -> anyhow::Result<(usize, usize)> {
 
     debug_assert!(part_a(&split(TEST)).unwrap_or_default() == 2);
-    debug_assert!(part_b(&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_b(&split(TEST)).unwrap_or_default() == 4);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     anyhow::Ok((ra, rb))
 }

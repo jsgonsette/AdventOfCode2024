@@ -7,11 +7,17 @@
 
 ## Performance
 
-I focus on code *readability* and *usability* first, instead of seeking for performance at all cost. Here are the results I get on my computer to solve the two parts of the problems:
+I focus on code *readability* and *usability* first, instead of seeking for performance at all cost. Here are the results I get on my computer (**AMD Ryzen 9 5900X**) to solve the two parts of the problems:
 
 ### 2024 
 | Day | Time (µs) |   | Day | Time (µs) |
 |-----|-----------|---|-----|-----------| 
 | 01  | *178*     |   | 02  | *507*     |
-| 03  | *80*      |   | 04  | *?*       |
+| 03  | *80*      |   | 04  | *282*     |
 | 05  | *?*       |   | 06  | *?*       |
+| 07  | *?*       |   | 08  | *?*       |
+| 09  | *?*       |   | 10  | *?*       |
+| 11  | *?*       |   | 12  | *?*       |
+| 13  | *?*       |   | 14  | *?*       |
+| 15  | *?*       |   | 16  | *?*       |
+| 17  | *?*       |   | 18  | *?*       |

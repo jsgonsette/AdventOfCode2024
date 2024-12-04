@@ -9,6 +9,10 @@ const TEST: &str = "\
 1 3 6 7 9
 ";
 
+fn split (content: &str) -> Vec<&str> {
+    content.lines().collect()
+}
+
 /// Checks that a sequence of values is safe
 struct SafetyChecker {
     is_increasing: Option<bool>,
@@ -45,11 +49,8 @@ impl SafetyChecker {
         is_safe
     }
 }
-fn split (content: &str) -> Vec<&str> {
-    content.lines().collect()
-}
 
-/// Parse a row and try to make a vector of u32 out of it/
+/// Parse a row and try to make a vector of u32 levels out of it/
 fn make_levels (row: &str) -> Result<Vec<u32>> {
     let items = row.split(' ');
 
@@ -67,6 +68,7 @@ where I: IntoIterator<Item = &'a u32> {
     })
 }
 
+/// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
     let sum_or_err: Result<Vec<usize>> = content.iter().map(|row| {
@@ -77,6 +79,7 @@ fn part_a (content: &[&str]) -> Result<usize> {
     sum_or_err.map (|x| x.iter().copied ().sum())
 }
 
+/// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
     let sum = content.iter().map(|row| {

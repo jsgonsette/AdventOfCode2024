@@ -14,6 +14,7 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Create two vectors from the puzzle file content
 fn make_two_lists (content: &[&str]) -> Result<(Vec<usize>, Vec<usize>)> {
 
     let pairs = content.iter().map_while (| row | {
@@ -37,6 +38,7 @@ fn make_two_lists (content: &[&str]) -> Result<(Vec<usize>, Vec<usize>)> {
     }
 }
 
+/// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
     let (mut v_left, mut v_right) = make_two_lists(content)?;
@@ -49,6 +51,7 @@ fn part_a (content: &[&str]) -> Result<usize> {
     Ok(sum_diff as usize)
 }
 
+/// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
     let (v_left, v_right) = make_two_lists(content)?;
