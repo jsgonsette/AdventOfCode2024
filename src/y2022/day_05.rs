@@ -13,9 +13,6 @@ move 2 from 2 to 1
 move 1 from 1 to 2
 ";
 
-const TEST2: &str = "\
-
-";
 
 enum Crane {
     CrateMover9000,

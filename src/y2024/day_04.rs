@@ -43,6 +43,7 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Return the character at some position `(x, y)`, or None if the position is out limit.
 fn sample_content (content: &[&str], x: isize, y: isize) -> Option<char> {
 
     if x < 0 || y < 0 {
@@ -54,6 +55,8 @@ fn sample_content (content: &[&str], x: isize, y: isize) -> Option<char> {
     }
 }
 
+/// Compute the coordinate adjacent to `(x, y)` for some orientation `direction / fb`.
+/// This new coordinate can be out limit !
 fn next_coordinate (x: isize, y: isize, direction: Direction, fb: FB) -> (isize, isize) {
 
     let v = match direction {
@@ -71,6 +74,8 @@ fn next_coordinate (x: isize, y: isize, direction: Direction, fb: FB) -> (isize,
     (x+v_signed.0, y+v_signed.1)
 }
 
+/// Check if the XMAS pattern can be found at some location `(x, y)`
+/// and orientation `direction / fb`.
 fn look_at (content: &[&str], x: isize, y: isize, direction: Direction, fb: FB) -> bool {
 
     static PATTERN: [char; 4] = ['X', 'M', 'A', 'S'];
@@ -84,6 +89,8 @@ fn look_at (content: &[&str], x: isize, y: isize, direction: Direction, fb: FB) 
     true
 }
 
+/// Count how many XMAS patterns are found horizontally, vertically and diagonally, starting
+/// at the coordinate `(x, y)`
 fn look_around (content: &[&str], x: isize, y: isize) -> usize {
 
     let mut count = 0;
@@ -96,6 +103,7 @@ fn look_around (content: &[&str], x: isize, y: isize) -> usize {
     count
 }
 
+/// Check if the X-MAS pattern is found at location `(x, y)`
 fn look_around_x (content: &[&str], x: isize, y: isize) -> bool {
 
     if sample_content(content, x, y) != Some('A') { return false; }
@@ -113,6 +121,7 @@ fn look_around_x (content: &[&str], x: isize, y: isize) -> bool {
     }
 }
 
+/// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
     let width = content[0].as_bytes().len();
@@ -128,6 +137,7 @@ fn part_a (content: &[&str]) -> Result<usize> {
     Ok(sum)
 }
 
+/// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
     let width = content[0].as_bytes().len();
