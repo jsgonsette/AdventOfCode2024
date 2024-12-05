@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 use anyhow::*;
 use itertools::Itertools;
 
@@ -15,7 +15,7 @@ const TEST: &str = "\
 
 type Time = u32;
 type PQ = BinaryHeap<ExplorationStep>;
-type Jobs = Vec<ExplorationStep>;
+type Jobs = HashSet<ExplorationStep>;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
@@ -54,7 +54,7 @@ struct ExplorationMap {
     maze: Maze,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Hash, Clone, Copy)]
 struct ExplorationStep {
     x: usize,
     y: usize,
@@ -254,45 +254,45 @@ impl ExplorationMap {
         }
     }
 
-    fn solve (&mut self, (x, y): (usize, usize)) -> Time {
+    fn solve (&mut self, entry: (usize, usize)) -> Time {
 
         let mut jobs = Jobs::new();
         let mut next_jobs = Jobs::new();
 
-        let mut pq = PQ::new();
-        pq.push(ExplorationStep { x, y, t: 0, });
-
-        let unvisited = vec![vec![false; self.maze.height]; self.maze.width];
-        let mut visited = unvisited.clone();
+        jobs.insert(ExplorationStep { x: entry.0, y: entry.1, t: 0, });
 
         let mut dyn_maze = self.maze.evolve();
         let mut time: Time = 0;
-        //println!("{}", self.maze);
 
-        while !pq.is_empty() {
-            let ExplorationStep {x, y, t} = pq.pop().unwrap();
+        while !jobs.is_empty() {
 
-            if t > time {
-                //println!("{}", dyn_maze);
-                dyn_maze = dyn_maze.evolve();
-                visited = unvisited.clone();
-                time = t;
-            }
-            //println!("x: {}, y: {}, t: {}", x, y, t);
+            // Extract one item from the exploration steps
+            let step = *jobs.iter().next().unwrap();
+            jobs.remove(&step);
 
+            let ExplorationStep {x, y, t} = step;
+
+            // Exit found ?
             if x == self.maze.width -2 && y == self.maze.height -1 { break; }
 
+            // Test all the directions around
             for direction in DIRECTIONS {
                 if let Some ((nx, ny)) = dyn_maze.can_move((x, y), *direction) {
-                    if !visited [nx][ny] {
-                        pq.push(ExplorationStep { x: nx, y: ny, t: t + 1 });
-                        visited [nx][ny] = true;
-                    }
+                    next_jobs.insert(
+                        ExplorationStep { x: nx, y: ny, t: t + 1 }
+                    );
                 }
+            }
+
+            // When no more items, prepare for the next time step
+            if jobs.is_empty() {
+                dyn_maze = dyn_maze.evolve();
+                time = t;
+                std::mem::swap(&mut jobs, &mut next_jobs);
             }
         }
 
-        time
+        time+1
     }
 }
 
