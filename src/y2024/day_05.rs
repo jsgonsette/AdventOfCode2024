@@ -169,6 +169,7 @@ impl Rules {
     }
 }
 
+/// Read the updates from the puzzle file content
 fn read_updates (content: &[&str]) -> Vec<Update> {
 
     // Read the updates, row by row

@@ -15,6 +15,7 @@ const TEST: &str = "\
 
 type Time = u32;
 type PQ = BinaryHeap<ExplorationStep>;
+type Jobs = Vec<ExplorationStep>;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
@@ -51,9 +52,6 @@ struct ExplorationMap {
     
     /// Maze to explore
     maze: Maze,
-    
-    /// Best time to reach all the maze's cells
-    reached: Vec<Option<Time>>,
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -251,20 +249,18 @@ impl Maze {
 
 impl ExplorationMap {
     fn from(maze: Maze) -> ExplorationMap {
-        let width = maze.width;
-        let height = maze.height;
-
         ExplorationMap {
             maze,
-            reached: vec![None; height * width],
         }
     }
 
     fn solve (&mut self, (x, y): (usize, usize)) -> Time {
 
+        let mut jobs = Jobs::new();
+        let mut next_jobs = Jobs::new();
+
         let mut pq = PQ::new();
         pq.push(ExplorationStep { x, y, t: 0, });
-        self.set_time_if_better((x, y), 0);
 
         let unvisited = vec![vec![false; self.maze.height]; self.maze.width];
         let mut visited = unvisited.clone();
@@ -297,23 +293,6 @@ impl ExplorationMap {
         }
 
         time
-    }
-
-    fn set_time_if_better (&mut self, (x, y): (usize, usize), t: Time) -> bool {
-        if x == 0 || x >= self.maze.width - 1 || y == 0 || y >= self.maze.height - 1 { return false }
-
-        let reached = &mut self.reached[y * self.maze.width + x];
-        match reached {
-            None => {
-                *reached = Some (t);
-                true
-            },
-            Some(prev_t) if t < *prev_t => {
-                *reached = Some (t);
-                true
-            }
-            _ => { false }
-        }
     }
 }
 
