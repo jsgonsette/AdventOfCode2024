@@ -1,4 +1,7 @@
+use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 use anyhow::*;
+use itertools::Itertools;
 
 const TEST: &str = "\
 47|53
@@ -31,23 +34,34 @@ const TEST: &str = "\
 97,13,75,29,47
 ";
 
+/// A single page number
+type Page = u32;
+
+/// A sequence of page to update
+type Update = Vec<Page>;
 
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Loads and checks the rules of precedence
 #[derive(Debug)]
 struct Rules {
 
-    rules: Vec<(u32, u32)>
+    /// The rules of precedence
+    rules: HashMap<Page, Vec<Page>>,
+
+    /// Number of such rules
+    num_rules: usize,
 }
 
 impl Rules {
+
+    /// New instance based on the puzzle file `content`
     fn new (content: &[&str]) -> Result<Rules> {
 
-        let rules: Vec<(u32, u32)> = content.iter ().map_while(|&row| {
-
-            println!("Parsing row {}", row);
+        /// Load the list of rules until we detect the empty line
+        let list_rules: Vec<(u32, u32)> = content.iter ().map_while(|&row| {
             if row.is_empty() {
                 None
             } else {
@@ -57,39 +71,174 @@ impl Rules {
             }
         }).collect();
 
-        if !content [rules.len()].is_empty() {
+        if !content [list_rules.len()].is_empty() {
             bail!("Rule separator not found")
         }
         else {
-            Ok (Rules { rules })
+            let num_rules = list_rules.len();
+
+            /// Group the rules that have the same first page number
+            let mut rules = HashMap::new();
+            for (first, second) in list_rules.into_iter() {
+                rules.entry(first).or_insert_with(Vec::new).push(second);
+            }
+
+            Ok (Rules { num_rules, rules })
         }
     }
+
+    /// Check if a page update sequence is correct, according to the rules
+    fn check_update (&self, update: &Update) -> bool {
+
+        // To collect all the pages we have already seen in this update
+        let mut pages_seen = HashSet::<u32>::new();
+
+        // Check each page in sequence
+        for page in update.iter () {
+
+            // If we have rules specifying what pages should come after
+            if let Some (late_pages) = self.rules.get(page) {
+
+                // Check we have not seen it
+                let already_seen = late_pages.iter().any(|late_page| pages_seen.contains (late_page));
+                if already_seen { return false }
+            }
+
+            // We have seen this page
+            pages_seen.insert(*page);
+        }
+
+        true
+    }
+
+    /// Given a `page` number belonging to some `update` sequence,
+    /// return all the rules that apply to both of them
+    fn get_constraints (&self, page: u32, update: &Update) -> Vec<u32> {
+        if self.rules.contains_key(&page) == false { vec![] }
+        else {
+            let constraints = &self.rules [&page];
+            constraints.iter().filter(|late_page| {
+                update.contains(late_page)
+            }).copied ().collect()
+        }
+    }
+
+    fn num_rules (&self) -> usize {
+        self.num_rules
+    }
+}
+
+fn read_updates (content: &[&str]) -> Vec<Update> {
+
+    // Read the updates, row by row
+    let updates: Vec<Update> = content.iter().map(|row| {
+
+        // Each number is two digits, so we can take some shortcuts
+        let len = row.as_bytes().iter().len();
+        let num_numbers = (len+1) / 3;
+        let update: Update = (0..num_numbers).map(
+            |idx| row [idx*3..idx*3+2].parse::<u32>().unwrap()
+        ).collect();
+
+        update
+    }).collect();
+
+    updates
+}
+
+/// Find and return the correct `update` ordering that respects the rules
+fn correct_update (mut update: Update, rules: &Rules) -> Result<Update> {
+
+    let mut correct_update: Update = vec![];
+    correct_update.reserve(update.len());
+
+    type Constraint = Vec<Page>;
+
+    // Build a constraint for each page in the update. That is, for each page,
+    // collect all the other pages of the update that must come first
+    let mut constraints: Vec<Constraint> = update.iter().map(
+        |page| rules.get_constraints(*page, &update)
+    ).collect();
+
+    // Build the correct update ordering ...
+    while (update.len () > 0) {
+
+        // Get the index of the next empty constraint (there should be one if no cycle)
+        let next = constraints.iter().enumerate ().find_map(
+            | (idx, constraint) | {
+                if constraint.is_empty() { Some (idx) } else { None }
+            }
+        ).ok_or(anyhow!("No empty constraint found. Cycle ?"))?;
+
+        // The page with no constraint can be added to the solution
+        let next_page = update [next];
+        correct_update.push(next_page);
+
+        // Remove the page we used
+        constraints.remove(next);
+        update.remove(next);
+
+        // Remove the page we used from the constraints of the other pages
+        for constraint in constraints.iter_mut() {
+            if let Some (idx) = constraint.iter().position(|p| *p == next_page) {
+                constraint.remove(idx);
+            }
+        }
+    }
+
+    Ok(correct_update)
 }
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
+    // Extract the rules and the list of updates
     let rules = Rules::new(content)?;
-    dbg!(&rules);
+    let updates = read_updates(&content [rules.num_rules()+1 ..]);
 
-    Ok(0)
+    // Sum the middle number of all the correct updates
+    let sum: u32 = updates.iter().map (|update| {
+            if rules.check_update(update) {
+                let middle = (update.len() - 1) / 2;
+                update[middle]
+            } else {
+                0
+            }
+        }
+    ).sum ();
+
+    Ok(sum as usize)
 }
 
 /// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
+    // Extract the rules and the list of updates
+    let rules = Rules::new(content)?;
+    let updates = read_updates(&content [rules.num_rules()+1 ..]);
 
+    // Sum the middle number of all the wrong updates, after correction
+    let mut sum = 0;
+    for update in updates.into_iter() {
 
-    Ok(0)
+        if !rules.check_update(&update) {
+            let corrected_update = correct_update (update, &rules)?;
+            let middle = (corrected_update.len() - 1) / 2;
+            sum += corrected_update[middle];
+        }
+    }
+
+    Ok(sum as usize)
+
 }
 
 pub fn day_5 (content: &[&str]) -> Result <(usize, usize)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 0);
-    //debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 143);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 123);
 
-    let ra = 0;//part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let ra = part_a(content)?;
+    let rb = part_b(content)?;
 
     Ok((ra, rb))
 }
