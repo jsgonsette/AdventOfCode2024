@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
 use anyhow::*;
-use itertools::Itertools;
 
 const TEST: &str = "\
 47|53
@@ -60,7 +58,7 @@ impl Rules {
     /// New instance based on the puzzle file `content`
     fn new (content: &[&str]) -> Result<Rules> {
 
-        /// Load the list of rules until we detect the empty line
+        // Load the list of rules until we detect the empty line
         let list_rules: Vec<(u32, u32)> = content.iter ().map_while(|&row| {
             if row.is_empty() {
                 None
@@ -77,7 +75,7 @@ impl Rules {
         else {
             let num_rules = list_rules.len();
 
-            /// Group the rules that have the same first page number
+            // Group the rules that have the same first page number
             let mut rules = HashMap::new();
             for (first, second) in list_rules.into_iter() {
                 rules.entry(first).or_insert_with(Vec::new).push(second);
@@ -109,6 +107,49 @@ impl Rules {
         }
 
         true
+    }
+
+    /// Find and return the correct `update` ordering that respects the rules
+    fn correct_update (&self, update: Update) -> Result<Update> {
+
+        let mut indexes_ok: Vec<bool> = vec![false; update.len()];
+        let mut correct_update: Update = vec![];
+        correct_update.reserve(update.len());
+
+        type Constraint = Vec<Page>;
+
+        // Build a constraint for each page in the update. That is, for each page,
+        // collect all the other pages of the update that must come first
+        let mut constraints: Vec<Constraint> = update.iter().map(
+            |page| self.get_constraints(*page, &update)
+        ).collect();
+
+        // Build the correct update ordering ...
+        for _ in 0..update.len() {
+
+            // Get the index of the next empty constraint (there should be one if no cycle)
+            let next_idx = constraints.iter().enumerate ().find_map(
+                | (idx, constraint) | {
+                    if !indexes_ok[idx] && constraint.is_empty() { Some (idx) } else { None }
+                }
+            ).ok_or(anyhow!("No empty constraint found. Cycle ?"))?;
+
+            // The page with no constraint can be added to the solution
+            let next_page = update [next_idx];
+            correct_update.push(next_page);
+
+            // Remove the page we used
+            indexes_ok[next_idx] = true;
+
+            // Remove the page we used from the constraints of the other pages
+            for constraint in constraints.iter_mut() {
+                if let Some (idx) = constraint.iter().position(|p| *p == next_page) {
+                    constraint.swap_remove(idx);
+                }
+            }
+        }
+
+        Ok(correct_update)
     }
 
     /// Given a `page` number belonging to some `update` sequence,
@@ -146,48 +187,6 @@ fn read_updates (content: &[&str]) -> Vec<Update> {
     updates
 }
 
-/// Find and return the correct `update` ordering that respects the rules
-fn correct_update (mut update: Update, rules: &Rules) -> Result<Update> {
-
-    let mut correct_update: Update = vec![];
-    correct_update.reserve(update.len());
-
-    type Constraint = Vec<Page>;
-
-    // Build a constraint for each page in the update. That is, for each page,
-    // collect all the other pages of the update that must come first
-    let mut constraints: Vec<Constraint> = update.iter().map(
-        |page| rules.get_constraints(*page, &update)
-    ).collect();
-
-    // Build the correct update ordering ...
-    while (update.len () > 0) {
-
-        // Get the index of the next empty constraint (there should be one if no cycle)
-        let next = constraints.iter().enumerate ().find_map(
-            | (idx, constraint) | {
-                if constraint.is_empty() { Some (idx) } else { None }
-            }
-        ).ok_or(anyhow!("No empty constraint found. Cycle ?"))?;
-
-        // The page with no constraint can be added to the solution
-        let next_page = update [next];
-        correct_update.push(next_page);
-
-        // Remove the page we used
-        constraints.remove(next);
-        update.remove(next);
-
-        // Remove the page we used from the constraints of the other pages
-        for constraint in constraints.iter_mut() {
-            if let Some (idx) = constraint.iter().position(|p| *p == next_page) {
-                constraint.remove(idx);
-            }
-        }
-    }
-
-    Ok(correct_update)
-}
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
@@ -222,14 +221,13 @@ fn part_b (content: &[&str]) -> Result<usize> {
     for update in updates.into_iter() {
 
         if !rules.check_update(&update) {
-            let corrected_update = correct_update (update, &rules)?;
+            let corrected_update = rules.correct_update (update)?;
             let middle = (corrected_update.len() - 1) / 2;
             sum += corrected_update[middle];
         }
     }
 
     Ok(sum as usize)
-
 }
 
 pub fn day_5 (content: &[&str]) -> Result <(usize, usize)> {

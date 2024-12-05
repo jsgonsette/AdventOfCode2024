@@ -16,9 +16,14 @@ const TEST: &str = "\
 type Time = u32;
 type PQ = BinaryHeap<ExplorationStep>;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
     Up, Down, Left, Right, Stay
 }
+
+static DIRECTIONS: &[Direction] = &[
+    Direction::Up, Direction::Down, Direction::Left, Direction::Right, Direction::Stay
+];
 
 /// Maze content at some coordinate
 #[derive(Default, Copy, Clone, Debug)]
@@ -189,7 +194,10 @@ impl Maze {
         cells.ok_or(anyhow!("Invalid content"))
     }
 
-    fn can_move (&self, coo: (usize, usize), mov: Direction) -> bool {
+    /// Determine if the given `mov` from `coo` is acceptable given the maze state.
+    /// It is acceptable is there is no blizzard nor wall on the landing coordinate.
+    /// In this case, return the landing coordinate
+    fn can_move (&self, coo: (usize, usize), mov: Direction) -> Option<(usize, usize)> {
 
         let coo = (coo.0 as isize, coo.1 as isize);
         let (nx, ny) = match (coo, mov) {
@@ -201,11 +209,15 @@ impl Maze {
         };
 
         if nx < 0 || ny < 0 || nx >= self.width as isize || ny >= self.height as isize {
-            false
+            None
         } else {
-            self.sample((nx as usize, ny as usize)).is_empty()
+            match self.sample((nx as usize, ny as usize)).is_empty() {
+                true => Some((nx as usize, ny as usize)),
+                false => None,
+            }
         }
     }
+
     /// Get the cell at some location `coo`
     fn sample (&self, coo: (usize, usize)) -> Cell {
         self.cells[coo.1 * self.width + coo.0]
@@ -254,6 +266,9 @@ impl ExplorationMap {
         pq.push(ExplorationStep { x, y, t: 0, });
         self.set_time_if_better((x, y), 0);
 
+        let unvisited = vec![vec![false; self.maze.height]; self.maze.width];
+        let mut visited = unvisited.clone();
+
         let mut dyn_maze = self.maze.evolve();
         let mut time: Time = 0;
         //println!("{}", self.maze);
@@ -264,26 +279,20 @@ impl ExplorationMap {
             if t > time {
                 //println!("{}", dyn_maze);
                 dyn_maze = dyn_maze.evolve();
+                visited = unvisited.clone();
                 time = t;
             }
             //println!("x: {}, y: {}, t: {}", x, y, t);
 
             if x == self.maze.width -2 && y == self.maze.height -1 { break; }
 
-            if dyn_maze.can_move((x, y), Direction::Stay) {
-                pq.push(ExplorationStep { x, y, t: t + 1, });
-            }
-            if dyn_maze.can_move((x, y), Direction::Up) {
-                pq.push(ExplorationStep { x, y: y-1, t: t + 1, });
-            }
-            if dyn_maze.can_move((x, y), Direction::Down) {
-                pq.push(ExplorationStep { x, y: y+1, t: t + 1, });
-            }
-            if dyn_maze.can_move((x, y), Direction::Left) {
-                pq.push(ExplorationStep { x: x-1, y, t: t + 1, });
-            }
-            if dyn_maze.can_move((x, y), Direction::Right) {
-                pq.push(ExplorationStep { x: x+1, y, t: t + 1, });
+            for direction in DIRECTIONS {
+                if let Some ((nx, ny)) = dyn_maze.can_move((x, y), *direction) {
+                    if !visited [nx][ny] {
+                        pq.push(ExplorationStep { x: nx, y: ny, t: t + 1 });
+                        visited [nx][ny] = true;
+                    }
+                }
             }
         }
 
@@ -333,7 +342,7 @@ pub fn day_24 (content: &[&str]) -> Result <(usize, usize)> {
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 18);
     //debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
 
-    let ra = 0;//part_a(content)?;
+    let ra = part_a(content)?;
     let rb = 0;//part_b(content)?;
 
     Ok((ra, rb))
