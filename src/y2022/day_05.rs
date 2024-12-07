@@ -1,5 +1,6 @@
 use anyhow::*;
 use itertools::Itertools;
+use crate::Solution;
 
 const TEST: &str = "\
 ....[D]
@@ -190,7 +191,7 @@ fn solve (content: &[&str], crane: Crane)-> Result<String> {
     Ok(stacks.get_top_row())
 }
 
-pub fn day_5 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_5 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(solve (&split(TEST), Crane::CrateMover9000).unwrap_or_default() == "CMZ");
     debug_assert!(solve (&split(TEST), Crane::CrateMover9001).unwrap_or_default() == "MCD");
@@ -198,7 +199,5 @@ pub fn day_5 (content: &[&str]) -> Result <(usize, usize)> {
     let ra = solve (content, Crane::CrateMover9000)?;
     let rb = solve (content, Crane::CrateMover9001)?;
 
-    println!("Solution for part a) is {}", ra);
-    println!("Solution for part b) is {}", rb);
-    Ok((42, 42))
+    Ok((Solution::Text(ra), Solution::Text(rb)))
 }

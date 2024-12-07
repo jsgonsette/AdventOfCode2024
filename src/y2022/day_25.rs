@@ -1,5 +1,6 @@
 use anyhow::*;
 use itertools::Itertools;
+use crate::Solution;
 
 const TEST: &str = "\
 1=-0-2
@@ -95,12 +96,12 @@ fn part_a (content: &[&str]) -> Result<String> {
 }
 
 /// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
+fn _part_b (_content: &[&str]) -> Result<usize> {
 
     Ok(0)
 }
 
-pub fn day_25 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_25 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == "2=-1=0");
     //debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
@@ -108,6 +109,5 @@ pub fn day_25 (content: &[&str]) -> Result <(usize, usize)> {
     let ra = part_a(content)?;
     let rb = 0;//part_b(content)?;
 
-    println!("ra: {}", ra);
-    Ok((0, rb))
+    Ok((Solution::Text(ra), Solution::Unsigned(rb)))
 }

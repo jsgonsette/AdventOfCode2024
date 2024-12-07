@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use anyhow::*;
+use crate::Solution;
 
 const TEST: &str = "\
 3   4
@@ -70,7 +71,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
     Ok(similarity)
 }
 
-pub fn day_1 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_1 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 11);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 31);
@@ -78,5 +79,5 @@ pub fn day_1 (content: &[&str]) -> Result <(usize, usize)> {
     let ra = part_a(content)?;
     let rb = part_b(content)?;
 
-    Ok((ra, rb))
+    Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }

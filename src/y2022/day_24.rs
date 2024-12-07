@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::collections::{BinaryHeap, HashSet};
 use anyhow::*;
 use itertools::Itertools;
+use crate::Solution;
 
 const TEST: &str = "\
 #.######
@@ -13,9 +13,13 @@ const TEST: &str = "\
 ######.#
 ";
 
+
+fn split (content: &str) -> Vec<&str> {
+    content.lines().collect()
+}
+
 type Time = u32;
-type PQ = BinaryHeap<ExplorationStep>;
-type Jobs = HashSet<ExplorationStep>;
+type Jobs = Vec<ExplorationStep>;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
@@ -37,6 +41,7 @@ struct Cell {
 }
 
 /// Encodes the static content of the maze at some time
+#[derive(Default, Clone, Debug)]
 struct Maze {
 
     /// Maze's cells
@@ -52,6 +57,9 @@ struct ExplorationMap {
     
     /// Maze to explore
     maze: Maze,
+
+    /// State of the maze after having found a solution
+    maze_evolved: Maze,
 }
 
 #[derive(Eq, PartialEq, Debug, Hash, Clone, Copy)]
@@ -147,6 +155,12 @@ impl Maze {
         let cells = Self::load_cell_from_content(content)?;
 
         Ok(Maze { cells, width, height, })
+    }
+
+    fn entry(&self) -> (usize, usize) { (1, 0) }
+
+    fn exit(&self) -> (usize, usize) {
+        (self.width -2, self.height -1)
     }
 
     /// Create a new maze by making this one evolve by one minute
@@ -248,81 +262,106 @@ impl Maze {
 }
 
 impl ExplorationMap {
+
     fn from(maze: Maze) -> ExplorationMap {
         ExplorationMap {
+            maze_evolved: maze.clone (),
             maze,
         }
     }
 
-    fn solve (&mut self, entry: (usize, usize)) -> Time {
+    /// Return the number of steps required to join the coordinates `from` and `to`.
+    /// If `continuation` is true, the maze initial state is the one reached
+    /// during the last call to this function.
+    fn solve (&mut self, from: (usize, usize), to: (usize, usize), continuation: bool) -> Time {
 
+        // Jobs for the current time step and for the next one
         let mut jobs = Jobs::new();
         let mut next_jobs = Jobs::new();
+        jobs.push(ExplorationStep { x: from.0, y: from.1, t: 0, });
 
-        jobs.insert(ExplorationStep { x: entry.0, y: entry.1, t: 0, });
+        // Keep track of the visited places for the current time step
+        let unvisited = vec![vec![false; self.maze.height]; self.maze.width];
+        let mut visited = unvisited.clone();
 
-        let mut dyn_maze = self.maze.evolve();
+        // Our dynamic maze
         let mut time: Time = 0;
+        let mut dyn_maze = match continuation {
+            false => self.maze.evolve(),
+            true => self.maze_evolved.clone (),
+        };
 
         while !jobs.is_empty() {
 
             // Extract one item from the exploration steps
-            let step = *jobs.iter().next().unwrap();
-            jobs.remove(&step);
-
+            let step = jobs.pop().unwrap();
             let ExplorationStep {x, y, t} = step;
 
             // Exit found ?
-            if x == self.maze.width -2 && y == self.maze.height -1 { break; }
+            if x == to.0 && y == to.1 { break; }
 
             // Test all the directions around
             for direction in DIRECTIONS {
+
                 if let Some ((nx, ny)) = dyn_maze.can_move((x, y), *direction) {
-                    next_jobs.insert(
-                        ExplorationStep { x: nx, y: ny, t: t + 1 }
-                    );
+                    if !visited[nx][ny] {
+
+                        next_jobs.push(
+                            ExplorationStep { x: nx, y: ny, t: t + 1 }
+                        );
+                        visited[nx][ny] = true;
+                    }
                 }
             }
 
             // When no more items, prepare for the next time step
             if jobs.is_empty() {
-                dyn_maze = dyn_maze.evolve();
                 time = t;
+                dyn_maze = dyn_maze.evolve();
                 std::mem::swap(&mut jobs, &mut next_jobs);
+                visited = unvisited.clone();
             }
         }
 
+        self.maze_evolved = dyn_maze;
         time+1
     }
-}
-
-fn split (content: &str) -> Vec<&str> {
-    content.lines().collect()
 }
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
     let maze = Maze::new(content)?;
+    let entry = maze.entry();
+    let exit = maze.exit();
     let mut exploration_map = ExplorationMap::from(maze);
-    let num_steps = exploration_map.solve((1, 0));
 
+    let num_steps = exploration_map.solve(entry, exit, false);
     Ok(num_steps as usize)
 }
 
 /// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
-    Ok(0)
+    let maze = Maze::new(content)?;
+    let entry = maze.entry();
+    let exit = maze.exit();
+    let mut exploration_map = ExplorationMap::from(maze);
+
+    let go = exploration_map.solve(entry, exit, false) as usize;
+    let back = exploration_map.solve(exit, entry, true) as usize;
+    let go_again = exploration_map.solve(entry, exit, true) as usize;
+
+    Ok(go + back + go_again)
 }
 
-pub fn day_24 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_24 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 18);
-    //debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 54);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
-    Ok((ra, rb))
+    Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }

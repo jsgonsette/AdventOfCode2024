@@ -1,7 +1,9 @@
-mod y2024;
+mod tools;
 mod y2022;
 mod y2023;
+mod y2024;
 
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use anyhow::*;
@@ -9,6 +11,8 @@ use std::result::Result::Ok;
 use std::time::Duration;
 use crate::y2024::Y2024;
 use crate::y2022::Y2022;
+
+pub use tools::{CellArea, Cell};
 
 /// A function solving the problem of the day.
 /// * Input param is a vector of strings (input file)
@@ -23,9 +27,20 @@ trait Year {
     fn get_day_fn (&self, day: u32) -> Option<FnDay>;
 }
 
-/// Each problem expects a final numerical solution
-type Solution = usize;
+/// Each problem expects a final numerical or textual solution
+enum Solution {
+    Unsigned (usize),
+    Text (String),
+}
 
+impl Display for Solution {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Solution::Unsigned (n) => n.fmt(f),
+            Solution::Text(s) => s.fmt(f),
+        }
+    }
+}
 
 fn main() -> Result<()> {
 

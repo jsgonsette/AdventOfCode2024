@@ -1,4 +1,5 @@
 use anyhow::*;
+use crate::Solution;
 
 const TEST: &str = "\
 xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))
@@ -170,7 +171,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
     Ok(mul_sum as usize)
 }
 
-pub fn day_3 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_3 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 161);
     debug_assert!(part_b (&split(TEST2)).unwrap_or_default() == 48);
@@ -178,5 +179,5 @@ pub fn day_3 (content: &[&str]) -> Result <(usize, usize)> {
     let ra = part_a(content)?;
     let rb = part_b(content)?;
 
-    Ok((ra, rb))
+    Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }

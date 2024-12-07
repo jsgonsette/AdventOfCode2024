@@ -1,4 +1,5 @@
 use anyhow::*;
+use crate::Solution;
 
 const TEST: &str = "\
 MMMSXXMASM
@@ -153,7 +154,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
     Ok(sum)
 }
 
-pub fn day_4 (content: &[&str]) -> Result <(usize, usize)> {
+pub fn day_4 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 18);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 9);
@@ -161,5 +162,5 @@ pub fn day_4 (content: &[&str]) -> Result <(usize, usize)> {
     let ra = part_a(content)?;
     let rb = part_b(content)?;
 
-    Ok((ra, rb))
+    Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
