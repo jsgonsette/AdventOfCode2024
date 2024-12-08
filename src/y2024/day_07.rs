@@ -120,7 +120,7 @@ fn compute_value (operands: &Operands, operators: &[Operator]) -> Value {
     })
 }
 
-/// Solve first part of the puzzle
+/// Solve the puzzle
 fn solve(content: &[&str], allow_concat: bool) -> Result<usize> {
 
     // Extract the equations to solve

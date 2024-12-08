@@ -1,4 +1,6 @@
+use std::fmt::Display;
 use anyhow::anyhow;
+use itertools::Itertools;
 
 /// Models a rectangular area made of generic [Cell]
 #[derive(Clone)]
@@ -18,6 +20,23 @@ pub trait Cell: Sized + Default {
     fn to_char (&self) -> char;
 }
 
+
+/// To help debugging
+impl<T: Cell> Display for CellArea<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
+        for y in 0..self.height {
+            let row: String = (0..self.width).map(|x| {
+                self.sample((x, y)).to_char()
+            }).join("");
+
+            f.write_str("\n")?;
+            f.write_str(&row)?;
+        }
+        f.write_str("\n")
+    }
+}
+
 impl<T: Cell> CellArea<T> {
 
     pub fn new(content: &[&str]) -> anyhow::Result<CellArea<T>> {
@@ -33,6 +52,7 @@ impl<T: Cell> CellArea<T> {
         })
     }
 
+    /// Iterates on the cells. Yield tuples of `(x, y, &cell)` items
     pub fn iter_cells (&self) -> impl Iterator<Item=(usize, usize, &T)> {
         self.cells.iter().enumerate().map(
             |(i, cell)| (i % self.width, i / self.width, cell)
@@ -66,8 +86,17 @@ impl<T: Cell> CellArea<T> {
         &mut self.cells[coo.1 * self.width + coo.0]
     }
 
+    /// Try getting a reference on the cell at some `coo`
+    pub fn try_sample_mut (&mut self, coo: (isize, isize)) -> Option<&mut T> {
+        if coo.0 < 0 || coo.0 >= self.width as isize { return None }
+        if coo.1 < 0 || coo.1 >= self.height as isize { return None }
+        Some (self.sample_mut((coo.0 as usize, coo.1 as usize)))
+    }
+
+    /// Return the area width
     pub fn width (&self) -> usize { self.width }
 
+    /// Return the area height
     pub fn height (&self) -> usize { self.height }
 
 }
