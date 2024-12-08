@@ -27,6 +27,7 @@ enum Direction {
     Left, Right, Up, Down
 }
 
+/// The state of a lab location
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum LabCell {
     Empty,
@@ -34,6 +35,7 @@ enum LabCell {
     Guard,
 }
 
+/// Keep track of cells exploration, by direction
 #[derive(Debug, Default, Copy, Clone)]
 struct History {
     left: bool,
@@ -54,6 +56,7 @@ struct Lab {
     /// Guard moving direction
     guard_dir: Direction,
 
+    /// Models the area locations
     area: CellArea<LabCell>,
 }
 

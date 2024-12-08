@@ -94,6 +94,7 @@ impl Map {
         })
     }
 
+    /// Count the number of distinct antinodes are on the map
     fn count_antinodes(&mut self, consider_harmonics: bool) -> usize {
 
         // Count the number of antinodes
