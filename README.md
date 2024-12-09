@@ -2,22 +2,27 @@
 
 ## Usage
 
-1. The application expects your input files to be in the [./input/2024]() directory. Each file must be named according to the day number: `01.txt`, .. `25.txt`.
-2. There is only one binary to compile, that invokes all the daily puzzles in sequence (see [./src/main.rs]() )
+1. The application expects your input files to be in the [./input/2024](./input/2024) directory. Each file must be named according to the day number: `01.txt`, .. `25.txt`.
+2. There is only one binary to compile, that invokes all the daily puzzles in sequence (see [./src/main.rs](./src/main.rs) )
 
 ## Performance
 
-I focus on code *readability* and *usability* first, instead of seeking for performance at all cost. Here are the results I get on my computer (**AMD Ryzen 9 5900X**) to solve the two parts of the problems:
+I focus on code *readability* and *usability* first, instead of seeking for performance at all cost. Here are the results I get to solve the two parts of the problems:
 
-### 2024 
-| Day | Time (ms) |   | Day | Time (ms) |
-|-----|-----------|---|-----|-----------| 
-| 01  | *0.178*   |   | 02  | *0.507*   |
-| 03  | *0.080*   |   | 04  | *0.282*   |
-| 05  | *2.820*   |   | 06  | *128.7*   |
-| 07  | *1563*    |   | 08  | *0.099*   |
-| 09  | *7.05*    |   | 10  | *?*       |
-| 11  | *?*       |   | 12  | *?*       |
-| 13  | *?*       |   | 14  | *?*       |
-| 15  | *?*       |   | 16  | *?*       |
-| 17  | *?*       |   | 18  | *?*       |
+> All benchmarks are run on a **AMD Ryzen 9 5900X**
+
+### [2024](https://adventofcode.com/2024)
+
+| Day | Puzzle                                                       | Code                               | Perf. (ms) |
+|-----|--------------------------------------------------------------|------------------------------------|------------|
+| 01  | [Historian Hysteria](https://adventofcode.com/2024/day/1)    | [day_01.rs](./src/y2024/day_01.rs) | 0.178      |
+| 02  | [Red-Nosed Reports](https://adventofcode.com/2024/day/2)     | [day_02.rs](./src/y2024/day_02.rs) | 0.406      |
+| 03  | [Mull It Over](https://adventofcode.com/2024/day/3)          | [day_03.rs](./src/y2024/day_03.rs) | 0.080      |
+| 04  | [Ceres Search Hysteria](https://adventofcode.com/2024/day/4) | [day_04.rs](./src/y2024/day_04.rs) | 0.282      |
+| 05  | [Print Queue](https://adventofcode.com/2024/day/5)           | [day_05.rs](./src/y2024/day_05.rs) | 2.820      |
+| 06  | [Guard Gallivant](https://adventofcode.com/2024/day/6)       | [day_06.rs](./src/y2024/day_06.rs) | 122.5      |
+| 07  | [Bridge Repair](https://adventofcode.com/2024/day/7)         | [day_07.rs](./src/y2024/day_07.rs) | 19.71      |
+| 08  | [Resonant Collinearity](https://adventofcode.com/2024/day/8) | [day_08.rs](./src/y2024/day_08.rs) | 0.112      |
+| 09  | [Disk Fragmenter](https://adventofcode.com/2024/day/9)       | [day_09.rs](./src/y2024/day_09.rs) | 7.575      |
+
+    |

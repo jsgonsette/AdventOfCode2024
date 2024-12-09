@@ -177,7 +177,7 @@ fn part_b (content: &str) -> Result<usize> {
             }
         }
 
-        // In any case, skip the block we just process
+        // In any case, skip the block we just processed
         if next_file >= space {
             idx_file = next_file - space;
         }

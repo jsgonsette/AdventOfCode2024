@@ -40,9 +40,7 @@ fn read_equations (content: &[&str]) -> Result<Vec<Equation>> {
     for &row in content.iter () {
 
         // Separate the value from the operands
-        let mut tokens = row.split (':');
-        let value = tokens.next ().ok_or(anyhow!("Equation value not found in {row}"))?;
-        let operands = tokens.next ().ok_or(anyhow!("Operands not found in {row}"))?;
+        let (value, operands) = row.split_once(':').ok_or(anyhow!("Equation value not found in {row}"))?;
 
         // Read the value
         let value = value.parse::<usize>()?;
@@ -62,65 +60,55 @@ fn read_equations (content: &[&str]) -> Result<Vec<Equation>> {
     Ok (equations)
 }
 
-/// Return an iterator on all the possible combinations that it is possible to arrange in a vector
-/// of [Operator] of length `num_operators`. If `allow_concatenation` is false,
-/// the operation [Operator::Concat] is excluded.
-fn make_operators_iterator(num_operators: u32, allow_concatenation: bool) -> impl Iterator<Item = Vec<Operator>> {
-
-    assert!(num_operators < 20);
-
-    // Number of possible combinations to produce
-    let num_combi = 3u32.pow(num_operators);
-
-    // Change if we work with 2 or 3 operations
-    let base = match allow_concatenation {
-        false => 2,
-        true => 3,
-    };
-
-    // Iterator on the combinations
-    (0..num_combi).map (move |mut combi| {
-
-        // Create the current combination
-        let operators: Vec<Operator> = (0..num_operators).map (|_| {
-            let op_num = combi % base;
-            combi /= base;
-
-            match op_num {
-                0 => Operator::Add,
-                1 => Operator::Mul,
-                _ => Operator::Concat,
-            }
-        }).collect();
-
-        operators
-    })
+/// Merge two operands `op1` and `op2` with the provided `operator`
+fn merge_pair (op1: usize, op2: usize, operator: Operator) -> usize {
+    match operator {
+        Operator::Add => op1 + op2,
+        Operator::Mul => op1 * op2,
+        Operator::Concat => {
+            let num_digits = op2.ilog10()+1;
+            let shift = 10usize.pow(num_digits);
+            op1 * shift + op2
+        },
+    }
 }
 
-/// Given a list of `operands` and a list of `operators` to put in between, return
-/// the resulting computed value.
-fn compute_value (operands: &Operands, operators: &[Operator]) -> Value {
+/// Solve the equation *recursively*, given
+/// * the final equation `value`
+/// * the first operand `first_op`
+/// * all the other operands `other_op`
+/// * the flag `allow_concat` to enable the third operation
+///
+/// The function returns `true` if some combination of operators could be found
+fn solve_recursive (value: Value, first_op: usize, other_op: &[usize], allow_concat: bool) -> bool {
 
-    assert_eq!(operands.len(), operators.len () +1);
+    if other_op.len() < 1 { return false }
+    let op_1 = other_op [0];
 
-    let it_0 = operands.iter().skip(1);
-    let it_1 = operators.iter();
+    let op_01_add = merge_pair(first_op, op_1, Operator::Add);
+    let op_01_mul = merge_pair(first_op, op_1, Operator::Mul);
+    let op_01_concat = if allow_concat { merge_pair(first_op, op_1, Operator::Concat) } else { 0 };
 
-    let init = operands [0];
-    it_0.zip(it_1).fold(init, |acc, (&op, operation)| {
-        match operation {
-            Operator::Add => acc + op,
-            Operator::Mul => acc * op,
-            Operator::Concat => {
-                let num_digits = op.ilog10()+1;
-                let shift = 10usize.pow(num_digits);
-                acc * shift + op
-            },
-        }
-    })
+    if other_op.len() == 1 {
+        if op_01_add == value { true }
+        else if op_01_mul == value { true }
+        else if allow_concat && op_01_concat == value { true }
+        else { false }
+    }
+
+    else if other_op.len() > 1 {
+        solve_recursive(value, op_01_add, &other_op [1..], allow_concat) ||
+        solve_recursive(value, op_01_mul, &other_op [1..], allow_concat) ||
+        (allow_concat && solve_recursive(value, op_01_concat, &other_op [1..], allow_concat))
+    }
+
+    else {
+        unreachable!()
+    }
 }
 
-/// Solve the puzzle
+/// Solve the puzzle.
+/// Flag `allow_concat` allows the third operation for the second part of the problem.
 fn solve(content: &[&str], allow_concat: bool) -> Result<usize> {
 
     // Extract the equations to solve
@@ -129,18 +117,8 @@ fn solve(content: &[&str], allow_concat: bool) -> Result<usize> {
     // For each of them ...
     let mut sum_valid = 0;
     for (value, operands) in equations.into_iter() {
-
-        // ... iterate on the possible operators to put in between the operands
-        let num_operators = operands.len() -1;
-        for operators in make_operators_iterator(num_operators as u32, allow_concat) {
-
-            // Test the current combination
-            let test_value = compute_value(&operands, &operators);
-            if value == test_value {
-                sum_valid += value;
-                break;
-            }
-        }
+        let valid = solve_recursive(value, operands [0], &operands [1..], allow_concat);
+        if valid { sum_valid += value }
     }
 
     Ok(sum_valid)
@@ -149,7 +127,7 @@ fn solve(content: &[&str], allow_concat: bool) -> Result<usize> {
 pub fn day_7 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(solve(&split(TEST), false).unwrap_or_default() == 3749);
-    debug_assert!(solve (&split(TEST), true).unwrap_or_default() == 11387);
+    debug_assert!(solve(&split(TEST), true).unwrap_or_default() == 11387);
 
     let ra = solve(content, false)?;
     let rb = solve(content, true)?;
