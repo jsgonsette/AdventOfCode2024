@@ -92,9 +92,9 @@ impl PlayGround {
         let margin_top = vec!["."; width].join("");
         let margin_left = vec!["."; margin].join("");
 
-        let it_top = std::iter::repeat_n(margin_top.as_str(), margin);
+        let it_top = std::iter::repeat(margin_top.as_str()).take (margin);
         let it_content = content.iter ().copied();
-        let it_bottom = std::iter::repeat_n(margin_top.as_str(), margin);
+        let it_bottom = std::iter::repeat(margin_top.as_str()).take (margin);
         let it = it_top.chain(it_content).chain(it_bottom);
 
         // Make a single vector of cells to encode the maze
