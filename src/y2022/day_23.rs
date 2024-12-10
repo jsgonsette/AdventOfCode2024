@@ -131,12 +131,12 @@ fn part_a (content: &[&str]) -> Result<usize> {
 }
 
 /// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
+fn part_b (_content: &[&str]) -> Result<usize> {
 
     Ok(0)
 }
 
-pub fn day_23 (content: &[&str]) -> Result <(Solution, Solution)> {
+pub fn day_23 (_content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 0);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);

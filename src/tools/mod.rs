@@ -13,7 +13,7 @@ impl RowReader {
         RowReader { built_number: None }
     }
 
-    pub fn iter_numbers_fix<'a, const N: usize> (
+    pub fn _iter_numbers_fix<'a, const N: usize> (
         &'a mut self,
         content: &'a [&'a str],
     ) -> impl Iterator<Item=Result<[usize; N]>> + 'a {

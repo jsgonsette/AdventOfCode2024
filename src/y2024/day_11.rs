@@ -9,16 +9,16 @@ fn split (content: &str) -> Vec<&str> {
 }
 
 /// Solve first part of the puzzle
-fn part_a (content: &[&str]) -> Result<usize> {
+fn part_a (_content: &[&str]) -> Result<usize> {
     Ok(0)
 }
 
 /// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
+fn part_b (_content: &[&str]) -> Result<usize> {
     Ok(0)
 }
 
-pub fn day_11 (content: &[&str]) -> Result <(Solution, Solution)> {
+pub fn day_11 (_content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split (TEST)).unwrap_or_default() == 0);
     debug_assert!(part_b (&split (TEST)).unwrap_or_default() == 0);

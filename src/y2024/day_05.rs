@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use anyhow::*;
 use crate::Solution;
+use crate::tools::RowReader;
 
 const TEST: &str = "\
 47|53
@@ -60,14 +61,15 @@ impl Rules {
     fn new (content: &[&str]) -> Result<Rules> {
 
         // Load the list of rules until we detect the empty line
-        let list_rules: Vec<(u32, u32)> = content.iter ().map_while(|&row| {
-            if row.is_empty() {
-                None
-            } else {
-                let first = row[0..2].parse::<u32>().ok()?;
-                let second = row[3..].parse::<u32>().ok()?;
-                Some((first, second))
-            }
+        let mut reader = RowReader::new();
+        let list_rules: Vec<(Page, Page)> = content.iter ().map_while(|row| {
+
+            // End of rule on empty line
+            if row.is_empty() { return None; }
+
+            // Get the pair on each line
+            let pair: [usize; 2] = reader.process_row_fix(row)?;
+            Some ((pair [0] as Page, pair[1] as Page))
         }).collect();
 
         if !content [list_rules.len()].is_empty() {
@@ -90,7 +92,7 @@ impl Rules {
     fn check_update (&self, update: &Update) -> bool {
 
         // To collect all the pages we have already seen in this update
-        let mut pages_seen = HashSet::<u32>::new();
+        let mut pages_seen = HashSet::<Page>::new();
 
         // Check each page in sequence
         for page in update.iter () {
@@ -155,7 +157,7 @@ impl Rules {
 
     /// Given a `page` number belonging to some `update` sequence,
     /// return all the rules that apply to both of them
-    fn get_constraints (&self, page: u32, update: &Update) -> Vec<u32> {
+    fn get_constraints (&self, page: Page, update: &Update) -> Vec<Page> {
         if self.rules.contains_key(&page) == false { vec![] }
         else {
             let constraints = &self.rules [&page];
@@ -170,36 +172,25 @@ impl Rules {
     }
 }
 
-/// Read the updates from the puzzle file content
-fn read_updates (content: &[&str]) -> Vec<Update> {
+/// Return an iterator on the updates of the puzzle file content
+fn read_updates_2<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a {
 
-    // Read the updates, row by row
-    let updates: Vec<Update> = content.iter().map(|row| {
-
-        // Each number is two digits, so we can take some shortcuts
-        let len = row.as_bytes().iter().len();
-        let num_numbers = (len+1) / 3;
-        let update: Update = (0..num_numbers).map(
-            |idx| row [idx*3..idx*3+2].parse::<u32>().unwrap()
-        ).collect();
-
-        update
-    }).collect();
-
-    updates
+    let mut reader = RowReader::new();
+    content.iter().map(move |row| {
+        reader.iter_row(row).map(|v| v as u32).collect()
+    })
 }
-
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
     // Extract the rules and the list of updates
     let rules = Rules::new(content)?;
-    let updates = read_updates(&content [rules.num_rules()+1 ..]);
+    let updates_it = read_updates_2(&content[rules.num_rules()+1 ..]);
 
     // Sum the middle number of all the correct updates
-    let sum: u32 = updates.iter().map (|update| {
-            if rules.check_update(update) {
+    let sum: u32 = updates_it.map (|update| {
+            if rules.check_update(&update) {
                 let middle = (update.len() - 1) / 2;
                 update[middle]
             } else {
@@ -216,11 +207,11 @@ fn part_b (content: &[&str]) -> Result<usize> {
 
     // Extract the rules and the list of updates
     let rules = Rules::new(content)?;
-    let updates = read_updates(&content [rules.num_rules()+1 ..]);
+    let updates_it = read_updates_2(&content[rules.num_rules()+1 ..]);
 
     // Sum the middle number of all the wrong updates, after correction
     let mut sum = 0;
-    for update in updates.into_iter() {
+    for update in updates_it {
 
         if !rules.check_update(&update) {
             let corrected_update = rules.correct_update (update)?;
