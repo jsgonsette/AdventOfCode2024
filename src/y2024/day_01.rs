@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use anyhow::*;
 use crate::Solution;
+use crate::tools::RowReader;
 
 const TEST: &str = "\
 3   4
@@ -18,16 +19,11 @@ fn split (content: &str) -> Vec<&str> {
 /// Create two vectors from the puzzle file content
 fn make_two_lists (content: &[&str]) -> Result<(Vec<usize>, Vec<usize>)> {
 
+    let mut reader = RowReader::new();
+
     let pairs = content.iter().map_while (| row | {
-        let mut pairs = row.split("   ");
-
-        let left = pairs.next()?;
-        let right = pairs.next()?;
-
-        let left_num = left.parse::<usize>().ok()?;
-        let right_num = right.parse::<usize>().ok()?;
-
-        Some ((left_num, right_num))
+        let pair: [usize; 2] = reader.process_row_fix::<2>(row)?;
+        Some((pair[0], pair[1]))
     });
 
     let (v_left, v_right): (Vec<_>, Vec<_>) = pairs.unzip();

@@ -1,6 +1,87 @@
 use std::fmt::Display;
-use anyhow::anyhow;
+use anyhow::*;
 use itertools::Itertools;
+
+/// Reads rows made of numbers
+pub struct RowReader {
+    built_number: Option<usize>,
+}
+
+impl RowReader {
+
+    pub fn new() -> RowReader {
+        RowReader { built_number: None }
+    }
+
+    pub fn iter_numbers_fix<'a, const N: usize> (
+        &'a mut self,
+        content: &'a [&'a str],
+    ) -> impl Iterator<Item=Result<[usize; N]>> + 'a {
+
+        // Deliver a fixed size vector for each row
+        content.iter().map(|row| {
+            self.process_row_fix(row).ok_or(anyhow!("Invalid row: {row}"))
+        })
+    }
+
+    /// Iterate on all the numbers contained in a row, ignoring non-digit characters.
+    pub fn iter_row<'a> (&'a mut self, row:&'a str) -> impl Iterator<Item=usize> + 'a {
+
+        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
+        row_it.flat_map(|&b| {
+            self.process_byte(b)
+        })
+    }
+
+    /// Convert a row into a variable size vector of numbers.
+    /// All non-digit characters are ignored.
+    pub fn process_row (&mut self, row: &str) -> Vec<usize> {
+        self.iter_row(row).collect()
+    }
+
+    /// Convert a row into a fixed-size vector of numbers. All non-digit characters are ignored.
+    /// The function fails if the exact number of numbers is not found.
+    pub fn process_row_fix<const N: usize> (&mut self, row: &str) -> Option<[usize; N]> {
+        let mut v = [0; N];
+        let mut idx = 0;
+
+        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
+        for &b in row_it {
+
+            // Process the next byte and eventually collect a number
+            match self.process_byte(b) {
+                Some (number) => {
+                    if idx < N {
+                        v[idx] = number;
+                        idx += 1;
+                    }
+                    else { return None; }
+                },
+                None => {},
+            }
+        }
+
+        match idx {
+            _ if idx == N => Some (v),
+            _ => None
+        }
+    }
+
+    fn process_byte (&mut self, byte: u8) -> Option<usize> {
+        match byte as char  {
+            '0' ..= '9' => {
+                let current = self.built_number.unwrap_or_default();
+                self.built_number = Some(current*10 + (byte - '0' as u8) as usize);
+                None
+            },
+            _ => {
+                let out = self.built_number;
+                self.built_number = None;
+                out
+            },
+        }
+    }
+}
 
 /// Models a rectangular area made of generic [Cell]
 #[derive(Clone)]
