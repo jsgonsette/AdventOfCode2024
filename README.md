@@ -24,5 +24,6 @@ I focus on code *readability* and *usability* first, instead of seeking for perf
 | 07  | [Bridge Repair](https://adventofcode.com/2024/day/7)         | [day_07.rs](./src/y2024/day_07.rs) | 19.71      |
 | 08  | [Resonant Collinearity](https://adventofcode.com/2024/day/8) | [day_08.rs](./src/y2024/day_08.rs) | 0.112      |
 | 09  | [Disk Fragmenter](https://adventofcode.com/2024/day/9)       | [day_09.rs](./src/y2024/day_09.rs) | 7.575      |
+| 10  | [Hoof It](https://adventofcode.com/2024/day/10)              | [day_10.rs](./src/y2024/day_10.rs) | 1.101      |
 
-    |
+    

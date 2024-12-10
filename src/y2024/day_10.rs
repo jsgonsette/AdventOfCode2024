@@ -26,14 +26,14 @@ fn sample_map (map: &[&str], coo: Coo) -> Option<u8> {
 
 /// Draw a trail on the `path_map` by following it back to the start,
 /// incrementing the counter along the way.
-/// `trail_coo` gives the end of the trail (not necessarily at level 9)
-fn create_path (path_map: &mut PathMap, trail_coo: Coo, altitude: u8) {
+/// `trail_coo` gives the end of the trail
+fn create_path (path_map: &mut PathMap, trail_coo: Coo) {
 
     // Start from the end of the (maybe unfinished) trail
     let mut coo = trail_coo;
 
     // Step back to the head
-    for altitude in ('0'..= altitude as char).rev() {
+    for altitude in ('0'..= '9' as char).rev() {
 
         // Increment the trail counter for this path location
         let path_item = &mut path_map [coo.0 as usize][coo.1 as usize];
@@ -44,32 +44,25 @@ fn create_path (path_map: &mut PathMap, trail_coo: Coo, altitude: u8) {
     }
 }
 
+/// Score a trail's head starting at `head_coo`. If `with_rating` is true, the score counts
+/// all the possibly different trails leading to height `9`
 fn score_head (map: &[&str], path_map: &mut PathMap, head_coo: Coo, with_rating: bool) -> u32 {
-
-    //println! ("\nScoring head {:?}", tail_coo);
 
     let height = map.len();
     let width = map[0].len();
 
-    // Keep track of locations already visited when we don't care about the different
-    // way to join the end of the trail
-    let mut visited: Vec<Vec<bool>> = vec![vec![false; height]; width];
-
     // DFS queue
     let mut jobs = Vec::<Job>::with_capacity(height*width);
-    let first_job = Job { coo: head_coo, back: None };
+    let first_job = Job { coo: head_coo };
     jobs.push(first_job);
 
     // Process the jobs
     while let Some (job) = jobs.pop() {
 
-//        println!("Exploring {:?}", job.coo);
-        // Mark the current job as visited and get the altitude
-        visited [job.coo.0 as usize][job.coo.1 as usize] = true;
+        // Check if we have reached a goal. In this case, trace the path
         let Some (altitude) = sample_map(&map, job.coo) else { unreachable!() };
-
         if altitude == '9' as u8 {
-            create_path(path_map, job.coo, altitude);
+            create_path(path_map, job.coo);
         }
 
         // Test all the directions around
@@ -81,26 +74,19 @@ fn score_head (map: &[&str], path_map: &mut PathMap, head_coo: Coo, with_rating:
             if !with_rating {
                 if n_coo.0 < 0 || n_coo.0 >= width as isize { continue }
                 if n_coo.1 < 0 || n_coo.1 >= height as isize { continue }
-                if visited[n_coo.0 as usize][n_coo.1 as usize] { continue }
+                if path_map[n_coo.0 as usize][n_coo.1 as usize].back.is_some() { continue }
             }
 
             // If we have an unexplored location with the required elevation step ...
             if sample_map(map, n_coo) == Some (altitude+1) {
 
-                // ... if we have reached our goal, or another established trail
-                if false {//altitude+1 == '9' as u8 {
-                    create_path(path_map, n_coo, altitude+1);
-                }
+                // ... we must explore it
+                let next_job = Job { coo: n_coo };
+                jobs.push(next_job);
 
-                // otherwise we must explore it
-                else {
-                    let next_job = Job { coo: n_coo, back: Some(job.coo) };
-                    jobs.push(next_job);
-
-                    // and update our path map
-                    let path_item = PathItem { num_trails: 0, back: Some(job.coo) };
-                    path_map[n_coo.0 as usize][n_coo.1 as usize] = path_item;
-                }
+                // and update our path map
+                let path_item = PathItem { num_trails: 0, back: Some(job.coo) };
+                path_map[n_coo.0 as usize][n_coo.1 as usize] = path_item;
             }
         }
     }
@@ -111,12 +97,8 @@ fn score_head (map: &[&str], path_map: &mut PathMap, head_coo: Coo, with_rating:
 
 /// Element to process next while searching for trails
 struct Job {
-
     /// Coordinate to process
     pub coo: Coo,
-
-    /// Direction to the trail's head
-    pub back: Option<Coo>,
 }
 
 /// The four directions we can walk around
@@ -133,6 +115,7 @@ struct PathItem {
     pub back: Option<Coo>,
 }
 
+/// Enables to trace paths along the map
 type PathMap = Vec<Vec<PathItem>>;
 
 /// Solve the puzzle. Parameter `with_rating` enables the rated score of part b.
@@ -141,15 +124,15 @@ fn solve (map: &[&str], with_rating: bool) -> Result<usize> {
     let height = map.len();
     let width = map[0].len();
 
-    let mut sum_score = 0;
-
     // Look for trail heads
+    let mut sum_score = 0;
     for y in 0..map.len() {
         let row = map [y].as_bytes();
         for x in 0..row.len() {
 
             // For each trail head ...
             if row [x] as char == '0' {
+
                 let mut path_map: Vec<Vec<PathItem>> = vec![vec![Default::default(); height]; width];
 
                 // ... compute score and collect sum
