@@ -108,25 +108,28 @@ impl Cell for FieldCell {
 impl PlayGround {
 
     fn new (content: &[&str]) -> Result<PlayGround> {
-        let field = CellArea::new(content)?.inflated(10);
+        let field = CellArea::new(content)?.inflated(100);
         let votes = vec![Vote::default(); field.width() * field.height()];
 
         Ok(PlayGround { field, votes, current_dir: Direction::North })
     }
 
-    fn resolve_votes (&mut self) -> usize {
+    fn resolve_votes (&mut self) -> (usize, bool) {
 
         let mut new_field = CellArea::<FieldCell>::new_empty(
             self.field.width(),
             self.field.height()
         );
 
+        // For tracking the covered area
         let mut top = self.field.height();
         let mut bottom = 0;
         let mut left = self.field.width();
         let mut right = 0;
         let mut elf_count = 0;
+        let mut updated = false;
 
+        // Check all the cells for elves
         for (x, y, cell) in self.field.iter_cells() {
             let x = x as isize;
             let y = y as isize;
@@ -134,13 +137,16 @@ impl PlayGround {
             if *cell == FieldCell::Elf {
                 elf_count += 1;
 
+                // Next Elf location, based on the result of its vote
                 let new_pos = if let Some (target_coo) = self.vote_result((x, y)) {
+                    updated = true;
                     target_coo
                 } else {
                     (x, y)
                 };
                 *new_field.sample_mut((new_pos.0 as usize, new_pos.1 as usize)) = FieldCell::Elf;
 
+                // Track the field size
                 top = top.min(new_pos.1 as usize);
                 bottom = bottom.max(new_pos.1 as usize);
                 left = left.min(new_pos.0 as usize);
@@ -148,11 +154,13 @@ impl PlayGround {
             }
         }
 
+        // Update the new elves disposition and update the rule for the next turn
         self.field = new_field;
         self.current_dir = self.current_dir.next();
 
         // Return the size of the empty area covered by the elves
-        (bottom-top+1)*(right-left+1) - elf_count
+        let size = (bottom-top+1)*(right-left+1) - elf_count;
+        (size, updated)
     }
 
     fn vote_result (&self, coo: Coo) -> Option<Coo> {
@@ -214,7 +222,6 @@ impl PlayGround {
                 let idx = proposition.1 as usize * self.field.width() + proposition.0 as usize;
                 votes [idx].target_count += 1;
 
-                //println!("Elf at {x},{y} proposes {},{}", proposition.0, proposition.1);
                 break;
             }
             dir = dir.next();
@@ -235,13 +242,10 @@ impl PlayGround {
             Some(Direction::South) => y+1..=y+1,
         };
 
-        let r = range_x.cartesian_product(range_y).any (|(xi, yi)| {
+        range_x.cartesian_product(range_y).any (|(xi, yi)| {
             if xi == x && yi == y { return false}
             self.field.try_sample((xi, yi)).copied() == Some (FieldCell::Elf)
-        });
-
-        //println!("Test {}, {} in dir {:?}: {}", x, y, direction, r);
-        r
+        })
     }
 }
 
@@ -254,25 +258,35 @@ fn part_a (content: &[&str]) -> Result<usize> {
     let mut empty_area = 0;
     for _ in 0..10 {
         playground.make_votes();
-        empty_area = playground.resolve_votes();
+        (empty_area, _) = playground.resolve_votes();
     }
 
     Ok(empty_area)
 }
 
 /// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
+fn part_b (content: &[&str]) -> Result<usize> {
 
-    Ok(0)
+    let mut playground = PlayGround::new(content)?;
+
+    let mut round = 0;
+    let round_stop = loop {
+        round += 1;
+        playground.make_votes();
+        let (_, updated) = playground.resolve_votes();
+        if !updated { break round }
+    };
+
+    Ok(round_stop)
 }
 
 pub fn day_23 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 110);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 20);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
