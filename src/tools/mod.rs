@@ -123,9 +123,9 @@ impl<T: Cell> CellArea<T> {
     /// Instantiate the area on the basis of the puzzle file content.
     pub fn new(content: &[&str]) -> anyhow::Result<CellArea<T>> {
 
-        let height = content.len();
-        let width = content[0].len();
-        let cells = Self::load_cell_from_content(content)?;
+        let width = content.iter().map(|line| line.len()).max().unwrap_or(0);
+        let cells = Self::load_cell_from_content(content, width)?;
+        let height = cells.len () / width;
 
         Ok(CellArea {
             width,
@@ -170,19 +170,20 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// Create the vector of cells used to encode the maze from the puzzle file `content`
-    fn load_cell_from_content (content: &[&str]) -> anyhow::Result<Vec<T>> {
-
-        let width = content[0].len();
+    fn load_cell_from_content (content: &[&str], width: usize) -> Result<Vec<T>> {
 
         // Make a single vector of cells to encode the maze
-        let cells: Option<Vec<T>> = content.iter().flat_map (|row| {
-            row.as_bytes().iter().map(|&b| {
-                if row.len() == width {
-                    Cell::from_character(b as char)
-                }
-                else { None }
-            })
-        }).collect();
+        let cells: Option<Vec<T>> = content.iter()
+            .take_while(|row| !row.is_empty())
+            .flat_map (|row| {
+
+                // If the row length is unequal, expand it with white spaces
+                let expand_len = width - row.len();
+                let row_it = row.as_bytes().iter();
+                let expand_it = std::iter::repeat(&(' ' as u8)).take(expand_len);
+
+                row_it.chain (expand_it).map(|&b| { Cell::from_character(b as char) })
+            }).collect();
 
         cells.ok_or(anyhow!("Invalid content"))
     }
@@ -215,4 +216,23 @@ impl<T: Cell> CellArea<T> {
     /// Return the area height
     pub fn height (&self) -> usize { self.height }
 
+    pub fn wrap_coo (&self, coo: (isize, isize)) -> (isize, isize) {
+
+        let w = self.width as isize;
+        let h = self.height as isize;
+
+        let x = match coo.0 {
+            v if v < 0  => w + v,
+            v if v >= w => v - w,
+            v           => v,
+        };
+
+        let y = match coo.1 {
+            v if v < 0  => h + v,
+            v if v >= h => v - h,
+            v           => v,
+        };
+
+        (x, y)
+    }
 }

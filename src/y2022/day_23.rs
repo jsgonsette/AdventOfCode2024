@@ -296,13 +296,30 @@ fn part_b (content: &[&str]) -> Result<usize> {
     Ok(round_stop)
 }
 
+fn solve (content: &[&str]) -> Result<(usize, usize)> {
+
+    let mut playground = PlayGround::new(content)?;
+
+    let mut round = 0;
+    let mut empty_area = 0;
+
+    let round_stop = loop {
+        round += 1;
+        playground.make_votes();
+        let (area, updated) = playground.resolve_votes();
+
+        if round == 10 { empty_area = area; }
+        if !updated { break round }
+    };
+
+    Ok((empty_area, round_stop))
+}
+
 pub fn day_23 (content: &[&str]) -> Result <(Solution, Solution)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 110);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 20);
+    debug_assert!(solve (&split(TEST)).unwrap_or_default() == (110, 20));
 
-    let ra = part_a(content)?;
-    let rb = part_b(content)?;
+    let (ra, rb) = solve(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }

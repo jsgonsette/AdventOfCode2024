@@ -45,7 +45,7 @@ impl Display for Solution {
 fn main() -> Result<()> {
 
     solve_year(Y2022);
-    solve_year(Y2024);
+    //solve_year(Y2024);
 
     Ok(())
 }
