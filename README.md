@@ -1,4 +1,6 @@
-# My solutions for the Advent of Code 2024 puzzles, in Rust with RustRover
+# My solutions for the Advent of Code 2024 puzzles, in Rust
+
+![AoC in Rust](./AoCRust.jpg)
 
 ## Usage
 
