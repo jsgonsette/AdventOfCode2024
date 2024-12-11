@@ -39,7 +39,7 @@ fn get_or_count_children(memo: &mut Memoization, number: usize, num_blinks: u8) 
     }
 }
 
-/// Determine the number of children of some ancestor Pebbles `number` after
+/// Determine the number of children of some pebble ancestor `number` after
 /// some number of steps `num_blinks`. This value is determined by making
 /// the pebble evolve by one blink, then by computing *recursively* the number
 /// of children of the one or two pebbles it has yielded.

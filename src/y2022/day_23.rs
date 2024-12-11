@@ -1,5 +1,4 @@
 use std::cmp::PartialEq;
-use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Cell, CellArea, Solution};
@@ -51,11 +50,17 @@ struct Vote {
     target_count: usize,
 }
 
+/// Models the playground with the elves
 struct PlayGround {
-    field: CellArea<FieldCell>,
-    votes: Vec<Vote>,
-    current_dir: Direction,
 
+    /// Field content
+    field: CellArea<FieldCell>,
+
+    /// All the votes (one be location)
+    votes: Vec<Vote>,
+
+    /// Current direction for the vote rule
+    current_dir: Direction,
 }
 
 impl Direction {
@@ -114,6 +119,9 @@ impl PlayGround {
         Ok(PlayGround { field, votes, current_dir: Direction::North })
     }
 
+    /// Apply the results of all the votes by updating the elf locations accordingly.
+    /// The function returns `(size, updated)`, where `size` is the empty area covered by
+    /// the elves (part a) and `updated` is true if some elf has moved (part b)
     fn resolve_votes (&mut self) -> (usize, bool) {
 
         let mut new_field = CellArea::<FieldCell>::new_empty(
@@ -163,6 +171,8 @@ impl PlayGround {
         (size, updated)
     }
 
+    /// Return the result of a vote made by the elf at location `coo`.
+    /// The function returns the new elf location, if the vote is successful, or `None` otherwise
     fn vote_result (&self, coo: Coo) -> Option<Coo> {
 
         // Get the target proposition
@@ -181,11 +191,13 @@ impl PlayGround {
         }
     }
 
+    /// Get the vote at location `coo`
     fn sample_vote (&self, coo: Coo) -> &Vote {
         let idx = coo.1 as usize * self.field.width() + coo.0 as usize;
         &self.votes [idx]
     }
 
+    /// Do the vote mechanism for all the elves on the playground
     fn make_votes (&mut self) {
         let mut votes = vec![Vote::default(); self.field.width() * self.field.height()];
 
@@ -202,6 +214,8 @@ impl PlayGround {
         self.votes = votes;
     }
 
+    /// Create a vote for the elf at location `x, y`, by updating the collection of `votes`
+    /// accordingly
     fn make_vote (&self, votes: &mut Vec<Vote>, x: isize, y: isize) {
 
         // Test the 4 directions in sequence
@@ -228,6 +242,8 @@ impl PlayGround {
         }
     }
 
+    /// Check if some elf at location `x, y` has some neighbor in the provided `direction`.
+    /// If no direction is given, the 8 tiles around are checked.
     fn has_neighbors (&self, x: isize, y: isize, direction: Option<Direction>) -> bool {
 
         let range_x = match direction {
