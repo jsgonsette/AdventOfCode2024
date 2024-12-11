@@ -29,7 +29,7 @@ fn sample_map (map: &[&str], coo: Coo) -> Option<u8> {
 /// `trail_coo` gives the end of the trail
 fn create_path (path_map: &mut PathMap, trail_coo: Coo) {
 
-    // Start from the end of the (maybe unfinished) trail
+    // Start from the end of the trail
     let mut coo = trail_coo;
 
     // Step back to the head

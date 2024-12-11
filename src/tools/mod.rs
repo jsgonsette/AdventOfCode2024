@@ -92,7 +92,7 @@ pub struct CellArea<T> {
 }
 
 /// Models a single location inside a [CellArea]
-pub trait Cell: Sized + Default {
+pub trait Cell: Sized + Default + Clone {
 
     /// Create a Cell from a text character
     fn from_character (c: char) -> Option<Self>;
@@ -120,6 +120,7 @@ impl<T: Cell> Display for CellArea<T> {
 
 impl<T: Cell> CellArea<T> {
 
+    /// Instantiate the area on the basis of the puzzle file content.
     pub fn new(content: &[&str]) -> anyhow::Result<CellArea<T>> {
 
         let height = content.len();
@@ -131,6 +132,34 @@ impl<T: Cell> CellArea<T> {
             height,
             cells,
         })
+    }
+
+    pub fn new_empty (width: usize, height: usize) -> CellArea<T> {
+        CellArea {
+            width,
+            height,
+            cells: vec![Default::default(); width * height],
+        }
+    }
+
+    /// Return a copy of this instance with additional margin cells along its 4 sides.
+    /// Parameter `margin` indicates how many cells to add.
+    pub fn inflated (&self, margin: usize) -> CellArea<T> {
+        let n_width = self.width + margin * 2;
+        let n_height = self.height + margin * 2;
+        let n_cells = vec![Default::default(); n_width * n_height];
+
+        let mut new_area = CellArea {
+            width: n_width,
+            height: n_height,
+            cells: n_cells,
+        };
+
+        for (x, y) in (0..self.width).cartesian_product(0..self.height) {
+            *new_area.sample_mut((x+margin, y+margin)) = self.sample((x, y)).clone();
+        }
+
+        new_area
     }
 
     /// Iterates on the cells. Yield tuples of `(x, y, &cell)` items
@@ -168,6 +197,12 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// Try getting a reference on the cell at some `coo`
+    pub fn try_sample (&self, coo: (isize, isize)) -> Option<&T> {
+        if coo.0 < 0 || coo.0 >= self.width as isize { return None }
+        if coo.1 < 0 || coo.1 >= self.height as isize { return None }
+        Some (self.sample((coo.0 as usize, coo.1 as usize)))
+    }
+
     pub fn try_sample_mut (&mut self, coo: (isize, isize)) -> Option<&mut T> {
         if coo.0 < 0 || coo.0 >= self.width as isize { return None }
         if coo.1 < 0 || coo.1 >= self.height as isize { return None }

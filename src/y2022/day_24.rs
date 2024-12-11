@@ -1,8 +1,6 @@
 use std::cmp::Ordering;
-use std::fmt::Display;
 use anyhow::*;
-use itertools::Itertools;
-use crate::Solution;
+use crate::{Cell, CellArea, Solution};
 
 const TEST: &str = "\
 #.######
@@ -21,18 +19,20 @@ fn split (content: &str) -> Vec<&str> {
 type Time = u32;
 type Jobs = Vec<ExplorationStep>;
 
+/// The four directions we can move around + stay in place
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
     Up, Down, Left, Right, Stay
 }
 
+/// Enables to iterate on all the directions
 static DIRECTIONS: &[Direction] = &[
     Direction::Up, Direction::Down, Direction::Left, Direction::Right, Direction::Stay
 ];
 
 /// Maze content at some coordinate
 #[derive(Default, Copy, Clone, Debug)]
-struct Cell {
+struct MazeCell {
     up: bool,
     down: bool,
     left: bool,
@@ -41,16 +41,8 @@ struct Cell {
 }
 
 /// Encodes the static content of the maze at some time
-#[derive(Default, Clone, Debug)]
-struct Maze {
-
-    /// Maze's cells
-    cells: Vec<Cell>,
-
-    /// Dimensions
-    width: usize,
-    height: usize,
-}
+#[derive(Clone)]
+struct Maze (CellArea<MazeCell>);
 
 /// Encodes the status of our exploration
 struct ExplorationMap {
@@ -62,6 +54,7 @@ struct ExplorationMap {
     maze_evolved: Maze,
 }
 
+/// Encodes a state of exploration, with a location and time
 #[derive(Eq, PartialEq, Debug, Hash, Clone, Copy)]
 struct ExplorationStep {
     x: usize,
@@ -82,10 +75,9 @@ impl Ord for ExplorationStep {
         other.t.cmp(&self.t)
     }
 }
-
-impl Cell {
-    fn from_character (c: char) -> Option<Cell> {
-        let mut cell = Cell::default();
+impl Cell for MazeCell {
+    fn from_character (c: char) -> Option<MazeCell> {
+        let mut cell = MazeCell::default();
         match c {
             '.' => Some(cell),
             '#' => {
@@ -124,24 +116,12 @@ impl Cell {
         }
     }
 
-    fn is_empty (&self) -> bool {
-        !self.up && !self.down && !self.left && !self.right && !self.wall
-    }
 }
 
-/// To help debugging
-impl Display for Maze {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl MazeCell {
 
-        for y in 0..self.height {
-            let row: String = (0..self.width).map(|x| {
-               self.sample((x, y)).to_char()
-            }).join("");
-
-            f.write_str("\n")?;
-            f.write_str(&row)?;
-        }
-        f.write_str("\n")
+    fn is_empty (&self) -> bool {
+        !self.up && !self.down && !self.left && !self.right && !self.wall
     }
 }
 
@@ -150,60 +130,38 @@ impl Maze {
     /// New maze instance from puzzle file content
     fn new(content: &[&str]) -> Result<Maze> {
 
-        let height = content.len();
-        let width = content[0].len();
-        let cells = Self::load_cell_from_content(content)?;
-
-        Ok(Maze { cells, width, height, })
+        let area = CellArea::new(content)?;
+        Ok(Maze(area))
     }
 
     fn entry(&self) -> (usize, usize) { (1, 0) }
 
     fn exit(&self) -> (usize, usize) {
-        (self.width -2, self.height -1)
+        (self.0.width () -2, self.0.height() -1)
     }
 
     /// Create a new maze by making this one evolve by one minute
     fn evolve (&self) -> Maze {
 
         // Empty maze
-        let cells = vec! [Cell::default(); self.width * self.height];
-        let mut maze = Maze { cells, width: self.width, height: self.height };
+        let mut new_area = CellArea::<MazeCell>::new_empty(self.0.width(), self.0.height());
 
-        for x in 0..self.width {
-            for y in 0..self.height {
+        for x in 0..self.0.width () {
+            for y in 0..self.0.height () {
 
-                let cell = self.sample((x, y));
+                let cell = self.0.sample((x, y));
 
                 // Clone the wall
-                if cell.wall { maze.sample_mut((x, y)).wall = true; }
+                if cell.wall { new_area.sample_mut((x, y)).wall = true; }
 
                 // Propagate the blizzard
-                if cell.up    { maze.sample_mut((x, self.loop_up    (y))).up = true; }
-                if cell.down  { maze.sample_mut((x, self.loop_down  (y))).down = true; }
-                if cell.left  { maze.sample_mut((self.loop_left  (x), y)).left = true; }
-                if cell.right { maze.sample_mut((self.loop_right (x), y)).right = true; }
+                if cell.up    { new_area.sample_mut((x, self.loop_up    (y))).up = true; }
+                if cell.down  { new_area.sample_mut((x, self.loop_down  (y))).down = true; }
+                if cell.left  { new_area.sample_mut((self.loop_left  (x), y)).left = true; }
+                if cell.right { new_area.sample_mut((self.loop_right (x), y)).right = true; }
             }
         }
-        maze
-    }
-
-    /// Create the vector of cells used to encode the maze from the puzzle file `content`
-    fn load_cell_from_content (content: &[&str]) -> Result<Vec<Cell>> {
-
-        let width = content[0].len();
-
-        // Make a single vector of cells to encode the maze
-        let cells: Option<Vec<Cell>> = content.iter().flat_map (|row| {
-            row.as_bytes().iter().map(|&b| {
-                if row.len() == width {
-                    Cell::from_character(b as char)
-                }
-                else { None }
-            })
-        }).collect();
-
-        cells.ok_or(anyhow!("Invalid content"))
+        Maze(new_area)
     }
 
     /// Determine if the given `mov` from `coo` is acceptable given the maze state.
@@ -220,42 +178,37 @@ impl Maze {
             ((x, y), Direction::Right) => (x + 1, y),
         };
 
-        if nx < 0 || ny < 0 || nx >= self.width as isize || ny >= self.height as isize {
+        if nx < 0 || ny < 0 || nx >= self.0.width() as isize || ny >= self.0.height() as isize {
             None
         } else {
-            match self.sample((nx as usize, ny as usize)).is_empty() {
+            match self.0.sample((nx as usize, ny as usize)).is_empty() {
                 true => Some((nx as usize, ny as usize)),
                 false => None,
             }
         }
     }
 
-    /// Get the cell at some location `coo`
-    fn sample (&self, coo: (usize, usize)) -> Cell {
-        self.cells[coo.1 * self.width + coo.0]
-    }
-
-    fn sample_mut(&mut self, coo: (usize, usize)) -> &mut Cell {
-        &mut self.cells[coo.1 * self.width + coo.0]
-    }
-
-    fn loop_left (&self, x: usize) -> usize {
-        if x <= 1 { self.width - 2 }
+    /// Given the blizzard horizontal location `x`, returns its next position when moving to the left
+     fn loop_left (&self, x: usize) -> usize {
+        if x <= 1 { self.0.width() - 2 }
         else { x-1 }
     }
 
+    /// Given the blizzard horizontal location `x`, returns its next position when moving to the right
     fn loop_right (&self, x: usize) -> usize {
-        if x >= self.width - 2 { 1 }
+        if x >= self.0.width() - 2 { 1 }
         else { x + 1 }
     }
 
+    /// Given the blizzard horizontal location `y`, returns its next position when moving to the bottom
     fn loop_down (&self, y: usize) -> usize {
-        if y >= self.height - 2 { 1 }
+        if y >= self.0.height() - 2 { 1 }
         else { y + 1 }
     }
 
+    /// Given the blizzard horizontal location `y`, returns its next position when moving to the top
     fn loop_up (&self, y: usize) -> usize {
-        if y <= 1 { self.height - 2 }
+        if y <= 1 { self.0.height() - 2 }
         else { y - 1 }
     }
 
@@ -281,7 +234,7 @@ impl ExplorationMap {
         jobs.push(ExplorationStep { x: from.0, y: from.1, t: 0, });
 
         // Keep track of the visited places for the current time step
-        let unvisited = vec![vec![false; self.maze.height]; self.maze.width];
+        let unvisited = vec![vec![false; self.maze.0.height ()]; self.maze.0.width ()];
         let mut visited = unvisited.clone();
 
         // Our dynamic maze

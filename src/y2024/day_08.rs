@@ -25,7 +25,7 @@ type Frequency = char;
 type Coo = (usize, usize);
 
 /// An antenna on the map
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct CellAntenna {
 
     /// Antenna frequency
