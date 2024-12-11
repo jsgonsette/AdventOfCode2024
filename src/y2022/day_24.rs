@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
 
@@ -62,19 +61,6 @@ struct ExplorationStep {
     t: Time,
 }
 
-
-impl PartialOrd<Self> for ExplorationStep {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ExplorationStep {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // Lower time comes first
-        other.t.cmp(&self.t)
-    }
-}
 impl Cell for MazeCell {
     fn from_character (c: char) -> Option<MazeCell> {
         let mut cell = MazeCell::default();
@@ -120,6 +106,7 @@ impl Cell for MazeCell {
 
 impl MazeCell {
 
+    /// Return true if no blizzard at this location
     fn is_empty (&self) -> bool {
         !self.up && !self.down && !self.left && !self.right && !self.wall
     }
@@ -134,8 +121,10 @@ impl Maze {
         Ok(Maze(area))
     }
 
+    /// Get the maze's entry coordinate
     fn entry(&self) -> (usize, usize) { (1, 0) }
 
+    /// Get the maze's exit coordinate
     fn exit(&self) -> (usize, usize) {
         (self.0.width () -2, self.0.height() -1)
     }

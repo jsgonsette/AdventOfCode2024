@@ -95,9 +95,9 @@ impl Memoization {
 /// Solve the puzzle for a given number of steps `num_blinks`
 fn solve (row: &str, num_blinks: u8) -> Result<usize> {
 
-    let mut reader = RowReader::new();
-    let mut numbers_it = reader.iter_row(row);
     let mut memo = Memoization::new();
+    let mut reader = RowReader::new();
+    let numbers_it = reader.iter_row(row);
 
     let length = numbers_it.map(
         |n| count_children (&mut memo, n, num_blinks)
