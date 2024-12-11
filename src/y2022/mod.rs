@@ -17,13 +17,13 @@ impl Year for Y2022 {
     fn get_day_fn(&self, day: u32) -> Option<FnDay> {
         match day {
             1 => None,
-            2 => Some (day_02::day_2),
+            /*2 => Some (day_02::day_2),
             4 => Some (day_04::day_4),
-            5 => Some (day_05::day_5),
+            5 => Some (day_05::day_5),*/
             22=> Some (day_22::day_22),
-            23=> Some (day_23::day_23),
+            /*23=> Some (day_23::day_23),
             24=> Some (day_24::day_24),
-            25=> Some (day_25::day_25),
+            25=> Some (day_25::day_25),*/
             _ => None,
         }
     }

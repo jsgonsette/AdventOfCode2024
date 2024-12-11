@@ -38,6 +38,7 @@ struct Board {
     area: CellArea<Tile>,
     direction: Direction,
     coo: Coo,
+    cube: bool,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -104,10 +105,15 @@ impl Cell for Tile {
     }
 }
 
+enum Transform {
+    Rot90, Rot180, RotNeg90
+}
+
+
 impl Board {
 
     /// Create the board from the puzzle file content
-    fn new(content: &[&str]) -> Result<Board> {
+    fn new(content: &[&str], cube_mode: bool) -> Result<Board> {
 
         // Load the board content
         let mut area = CellArea::new(content)?;
@@ -125,9 +131,11 @@ impl Board {
             area,
             direction,
             coo,
+            cube: cube_mode,
         })
     }
 
+    /// Apply the provided list of `instructions` one by one
     fn apply_instructions(&mut self, instructions: &[Instruction]) {
 
         for ins in instructions {
@@ -136,16 +144,24 @@ impl Board {
                 Instruction::TurnRight => { self.direction = self.direction.turn_right()},
                 Instruction::TurnLeft => { self.direction = self.direction.turn_left()},
             }
-            //println!("Position: {:?}, {:?}", self.coo, self.direction);
         }
     }
 
+    /// Move straight by a given amount of `steps`.
     fn move_straight (&mut self, steps: u32) {
 
         let mut coo = self.coo;
         for _ in 0..steps {
-            let next_coo = self.next_coo(coo, self.direction);
+
+            // Make one step
+            let next_coo = match self.cube {
+                false => self.next_coo_flat(coo, self.direction),
+                true  => self.next_coo_cube(coo, self.direction),
+            };
+
+            // If the position has not changed, we hit a wall and stop
             if next_coo == coo { break }
+
             coo = next_coo;
         }
 
@@ -154,7 +170,9 @@ impl Board {
 
     /// Make one step in the direction `dir` from the location `coo`.
     /// [Tile::Void] tiles are ignored and the location is left unchanged if a [Tile::Wall] is hit.
-    fn next_coo (&self, coo: Coo, dir: Direction) -> Coo {
+    ///
+    /// **This function is for the first part where the map is FLAT**
+    fn next_coo_flat(&self, coo: Coo, dir: Direction) -> Coo {
         let step = dir.to_step();
 
         let mut next_coo = coo;
@@ -168,6 +186,104 @@ impl Board {
         }
     }
 
+    /// Make one step in the direction `dir` from the location `coo`.
+    /// [Tile::Void] tiles are ignored and the location is left unchanged if a [Tile::Wall] is hit.
+    ///
+    /// **This function is for the first part where the map is a CUBE**
+    fn next_coo_cube(&self, coo: Coo, dir: Direction) -> Coo {
+
+        let step = dir.to_step();
+        let (next_coo, next_dir) = self.wrap_cube_coo (
+            (coo.0 + step.0, coo.1 + step.1),
+            self.direction
+        );
+
+        match self.area.sample((next_coo.0 as usize, next_coo.1 as usize)) {
+            Tile::Empty => next_coo,
+            Tile::Wall  => coo,
+            Tile::Void  => unreachable!(),
+        }
+    }
+
+
+    fn wrap_cube_coo (&self, coo: Coo, dir: Direction) -> (Coo, Direction) {
+
+        const A: Coo = (1, 0);
+        const B: Coo = (1, 1);
+        const C: Coo = (1, 2);
+        const D: Coo = (0, 3);
+        const E: Coo = (0, 2);
+        const F: Coo = (2, 0);
+
+        let left  = |(x, y): Coo| (x-1, y);
+        let right = |(x, y): Coo| (x+1, y);
+        let up    = |(x, y): Coo| (x, y-1);
+        let down  = |(x, y): Coo| (x, y+1);
+
+        let face = self.get_face_coo(coo);
+        let (new_face, tr) = match (face, dir) {
+            (f, Direction::Left) if f == left(A) => (E, Transform::Rot180),
+            (f, Direction::Left) if f == left(E) => (A, Transform::Rot180),
+
+            (f, Direction::Left) if f == left(B) => (E, Transform::Rot90),
+            (f, Direction::Up)   if f == up  (E) => (B, Transform::RotNeg90),
+
+            (f, Direction::Left) if f == left(D) => (A, Transform::Rot90),
+            (f, Direction::Up)   if f == up  (A) => (D, Transform::RotNeg90),
+
+            (f, Direction::Down) if f == down(D) => (F, Transform::Rot180),
+            (f, Direction::Up)   if f == up  (F) => (D, Transform::Rot180),
+
+            (f, Direction::Right) if f == right(D) => (C, Transform::Rot90),
+            (f, Direction::Down)  if f == down (C) => (D, Transform::RotNeg90),
+
+            (f, Direction::Right) if f == right(C) => (F, Transform::Rot180),
+            (f, Direction::Right) if f == right(F) => (C, Transform::Rot180),
+
+            (f, Direction::Right) if f == right(B) => (F, Transform::Rot90),
+            (f, Direction::Down)  if f == down (F) => (B, Transform::RotNeg90),
+
+            _ => return (coo, dir) // We are on a valid face, not lost in the emptiness of the manifold
+        };
+
+        let cube_width = self.area.width() as isize / 3;
+        let off_x = coo.0 % cube_width;
+        let off_y = coo.1 % cube_width;
+
+        let (tr_off_x, tr_off_y) = match tr {
+            Transform::Rot90 => (off_y, cube_width-1-off_x),
+            Transform::Rot180 => (cube_width-1-off_x, cube_width-1-off_y),
+            Transform::RotNeg90 => (cube_width-1-off_y, off_x),
+        };
+
+        (coo, dir)
+    }
+
+    /// Compute a coordinate reflecting in which face of the cube we are.
+    /// e.g.: A -> (1, 0)
+    ///
+    /// ```
+    ///     0   1   2
+    ///       +---+---+
+    /// 0     | A | F |
+    ///       +---+---+
+    /// 1     | B |
+    ///   +---+---+
+    /// 2 | E | C |
+    ///   +---+---+
+    /// 3 | D |
+    ///   +---+
+    /// ```
+    fn get_face_coo(&self, coo: Coo) -> Coo {
+
+        let cube_width = self.area.width() as isize / 3;
+        let x = coo.0 / cube_width + if coo.0 < 0 { -1 } else { 0 };
+        let y = coo.1 / cube_width + if coo.1 < 0 { -1 } else { 0 };
+        (x, y)
+    }
+
+
+    /// Compute the password from the current position
     fn password (&self) -> usize {
         let num_dir = match self.direction {
             Direction::Right => 0,
@@ -217,7 +333,17 @@ fn load_instructions(row: &str) -> Result<Vec<Instruction>> {
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
-    let mut board = Board::new(content)?;
+    let mut board = Board::new(content, false)?;
+    let instructions = load_instructions(content [board.area.height()+1])?;
+
+    board.apply_instructions(&instructions);
+    Ok(board.password())
+}
+
+/// Solve second part of the puzzle
+fn part_b (content: &[&str]) -> Result<usize> {
+
+    let mut board = Board::new(content, true)?;
     let instructions = load_instructions(content [board.area.height()+1])?;
 
     //println!("Board: {}", board.area);
@@ -227,19 +353,13 @@ fn part_a (content: &[&str]) -> Result<usize> {
     Ok(board.password())
 }
 
-/// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
-
-    Ok(0)
-}
-
 pub fn day_22 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 6032);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 5031);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
