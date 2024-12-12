@@ -4,7 +4,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 
-pub use coordinates::{Direction, Coo};
+pub use coordinates::{Direction, Coo, Coo_};
 
 /// Reads rows made of numbers
 pub struct RowReader {
@@ -202,21 +202,25 @@ impl<T: Cell> CellArea<T> {
         &self.cells[coo.1 * self.width + coo.0]
     }
 
-    pub fn sample_mut (&mut self, coo: (usize, usize)) -> &mut T {
-        &mut self.cells[coo.1 * self.width + coo.0]
+    //pub fn sample_mut (&mut self, coo: (usize, usize)) -> &mut T {
+    pub fn sample_mut (&mut self, coo:impl Into<Coo_>) -> &mut T {
+        let coo = coo.into();
+        &mut self.cells[coo.y as usize * self.width + coo.x as usize]
     }
 
     /// Try getting a reference on the cell at some `coo`
-    pub fn try_sample (&self, coo: (isize, isize)) -> Option<&T> {
-        if coo.0 < 0 || coo.0 >= self.width as isize { return None }
-        if coo.1 < 0 || coo.1 >= self.height as isize { return None }
-        Some (self.sample((coo.0 as usize, coo.1 as usize)))
+    pub fn try_sample (&self, coo:impl Into<Coo_>) -> Option<&T> {
+        let coo = coo.into();
+        if coo.x < 0 || coo.y >= self.width as isize { return None }
+        if coo.x < 0 || coo.y >= self.height as isize { return None }
+        Some (self.sample((coo.x as usize, coo.y as usize)))
     }
 
-    pub fn try_sample_mut (&mut self, coo: (isize, isize)) -> Option<&mut T> {
-        if coo.0 < 0 || coo.0 >= self.width as isize { return None }
-        if coo.1 < 0 || coo.1 >= self.height as isize { return None }
-        Some (self.sample_mut((coo.0 as usize, coo.1 as usize)))
+    pub fn try_sample_mut (&mut self, coo:impl Into<Coo_>) -> Option<&mut T> {
+        let coo = coo.into();
+        if coo.x < 0 || coo.y >= self.width as isize { return None }
+        if coo.x < 0 || coo.y >= self.height as isize { return None }
+        Some (self.sample_mut((coo.x as usize, coo.y as usize)))
     }
 
     /// Return the area width
@@ -225,6 +229,7 @@ impl<T: Cell> CellArea<T> {
     /// Return the area height
     pub fn height (&self) -> usize { self.height }
 
+    /// Return the area
     pub fn area (&self) -> usize { self.width * self.height }
 
     pub fn wrap_coo (&self, coo: (isize, isize)) -> (isize, isize) {

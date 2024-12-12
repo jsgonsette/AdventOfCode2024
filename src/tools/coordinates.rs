@@ -9,6 +9,43 @@ static DIRECTIONS: &[Direction] = &[Direction::Up, Direction::Down, Direction::L
 
 pub type Coo = (isize, isize);
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Coo_ {
+    pub x: isize,
+    pub y: isize,
+}
+
+impl From<Coo_> for (isize, isize) {
+    fn from(coo: Coo_) -> Self { (coo.x, coo.y) }
+}
+
+impl From<(usize, usize)> for Coo_ {
+    fn from((x, y): (usize, usize)) -> Self {
+        assert!(x <= isize::MAX as usize && y <= isize::MAX as usize);
+        Coo_ { x: x as isize, y: y as isize }
+    }
+}
+
+impl From<(isize, isize)> for Coo_ {
+    fn from((x, y): (isize, isize)) -> Self {
+        Coo_ { x, y }
+    }
+}
+
+impl From<Coo_> for (usize, usize) {
+    fn from(coo: Coo_) -> Self {
+        assert!(coo.x >= 0 && coo.y >= 0);
+        (coo.x as usize, coo.y as usize)
+    }
+}
+
+impl Coo_ {
+    pub fn next (&self, direction: Direction) -> Self {
+        //let step = direction.step();
+        *self
+    }
+}
+
 impl Direction {
 
     /// Return an iterator on the possible directions
