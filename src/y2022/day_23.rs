@@ -265,37 +265,7 @@ impl PlayGround {
     }
 }
 
-
-/// Solve first part of the puzzle
-fn part_a (content: &[&str]) -> Result<usize> {
-
-    let mut playground = PlayGround::new(content)?;
-
-    let mut empty_area = 0;
-    for _ in 0..10 {
-        playground.make_votes();
-        (empty_area, _) = playground.resolve_votes();
-    }
-
-    Ok(empty_area)
-}
-
-/// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
-
-    let mut playground = PlayGround::new(content)?;
-
-    let mut round = 0;
-    let round_stop = loop {
-        round += 1;
-        playground.make_votes();
-        let (_, updated) = playground.resolve_votes();
-        if !updated { break round }
-    };
-
-    Ok(round_stop)
-}
-
+/// Solve both parts of the puzzle
 fn solve (content: &[&str]) -> Result<(usize, usize)> {
 
     let mut playground = PlayGround::new(content)?;

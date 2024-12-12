@@ -1,6 +1,10 @@
+mod coordinates;
+
 use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
+
+pub use coordinates::{Direction, Coo};
 
 /// Reads rows made of numbers
 pub struct RowReader {
@@ -169,6 +173,11 @@ impl<T: Cell> CellArea<T> {
         )
     }
 
+    /// Iterates on the cells coordinates. Yield tuples of `(x, y)` items
+    pub fn iter_xy (&self) -> impl Iterator<Item=(usize, usize)> {
+        (0..self.width).cartesian_product(0..self.height)
+    }
+
     /// Create the vector of cells used to encode the maze from the puzzle file `content`
     fn load_cell_from_content (content: &[&str], width: usize) -> Result<Vec<T>> {
 
@@ -215,6 +224,8 @@ impl<T: Cell> CellArea<T> {
 
     /// Return the area height
     pub fn height (&self) -> usize { self.height }
+
+    pub fn area (&self) -> usize { self.width * self.height }
 
     pub fn wrap_coo (&self, coo: (isize, isize)) -> (isize, isize) {
 
