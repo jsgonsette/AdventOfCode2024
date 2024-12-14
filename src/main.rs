@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{stdout, BufRead, BufReader, Write};
+use std::ops::RangeBounds;
 use std::result::Result::Ok;
 use std::time::Duration;
 
@@ -46,22 +47,22 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022);
-    solve_year(Y2023);
-    solve_year(Y2024);
+    solve_year(Y2022, 0..0);
+    solve_year(Y2023, 10..11);
+    solve_year(Y2024, 0..0);
 
     Ok(())
 }
 
 /// Solve for all the days of the provided `year` module.
-fn solve_year<Y> (year: Y)
+fn solve_year<Y> (year: Y, day_range: impl RangeBounds<u32>)
 where Y : Year {
 
     println!("=========================");
     println!("Solutions for year {:?}", year.get_year());
     println!("WARNING: execution time may be noisy!");
 
-    for day in 1..= 25 {
+    for day in (1..= 25).filter(|day| day_range.contains(day)) {
 
         // Get the function related to the current day, or skip the test
         let Some (fn_solve) = year.get_day_fn(day) else { continue };

@@ -30,4 +30,4 @@ Here are the results I get to solve the two parts of the problems:
 | 10  | [Hoof It](https://adventofcode.com/2024/day/10)              | [day_10.rs](./src/y2024/day_10.rs) | 1.101      |
 | 11  | [Plutonian Pebbles](https://adventofcode.com/2024/day/11)    | [day_11.rs](./src/y2024/day_11.rs) | 14.79      |
 | 12  | [Garden Groups](https://adventofcode.com/2024/day/12)        | [day_12.rs](./src/y2024/day_12.rs) | 2.150      |
-    
+| 13  | [Claw Contraption](https://adventofcode.com/2024/day/13)     | [day_13.rs](./src/y2024/day_13.rs) | 2.030      |

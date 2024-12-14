@@ -40,9 +40,14 @@ impl From<Coo_> for (usize, usize) {
 }
 
 impl Coo_ {
+
+    /// Returns the coordinates resulting from moving one step in the provided `direction`
     pub fn next (&self, direction: Direction) -> Self {
-        //let step = direction.step();
-        *self
+        let step = direction.step();
+        Self {
+            x: self.x + step.0,
+            y: self.y + step.1,
+        }
     }
 }
 

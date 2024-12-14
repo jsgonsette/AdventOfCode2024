@@ -211,15 +211,15 @@ impl<T: Cell> CellArea<T> {
     /// Try getting a reference on the cell at some `coo`
     pub fn try_sample (&self, coo:impl Into<Coo_>) -> Option<&T> {
         let coo = coo.into();
-        if coo.x < 0 || coo.y >= self.width as isize { return None }
-        if coo.x < 0 || coo.y >= self.height as isize { return None }
+        if coo.x < 0 || coo.x >= self.width as isize { return None }
+        if coo.y < 0 || coo.y >= self.height as isize { return None }
         Some (self.sample((coo.x as usize, coo.y as usize)))
     }
 
     pub fn try_sample_mut (&mut self, coo:impl Into<Coo_>) -> Option<&mut T> {
         let coo = coo.into();
-        if coo.x < 0 || coo.y >= self.width as isize { return None }
-        if coo.x < 0 || coo.y >= self.height as isize { return None }
+        if coo.x < 0 || coo.x >= self.width as isize { return None }
+        if coo.y < 0 || coo.y >= self.height as isize { return None }
         Some (self.sample_mut((coo.x as usize, coo.y as usize)))
     }
 
