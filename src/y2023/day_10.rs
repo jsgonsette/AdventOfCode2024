@@ -1,5 +1,4 @@
-use std::collections::{HashMap, HashSet};
-use std::io::{stdout, Write};
+use std::collections::{HashMap};
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
 use crate::tools::{Coo, Direction};
@@ -42,12 +41,15 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// All the possible pipe types
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Pipe {
     Empty, Start, Vertical, Horizontal, TopRight, TopLeft, BottomLeft, BottomRight
 }
 
 impl Pipe {
+
+    /// Return true for the corners
     fn is_corner (&self) -> bool {
         match self {
             Pipe::TopRight | Pipe::TopLeft => true,
@@ -56,6 +58,8 @@ impl Pipe {
         }
     }
 
+    /// Return true for a pair of connecting corners that does not reverse the
+    /// vertical or horizontal flow.
     fn same_corner_parity (&self, other: &Self) -> bool {
         match self {
             Pipe::BottomRight => *other == Pipe::TopLeft,
@@ -68,8 +72,13 @@ impl Pipe {
 }
 type Trail = HashMap<Coo, Pipe>;
 
+/// Models the maze of [pipes](Pipe)
 struct PipeMaze {
+
+    /// The area containing the pipes
     pipes: CellArea<Pipe>,
+
+    /// The start coordinate
     start: Coo,
 }
 
@@ -114,7 +123,7 @@ impl PipeMaze {
         let pipes: CellArea<Pipe> = CellArea::new(content)?;
 
         let start_cell = pipes.iter_cells()
-            .find(|(x, y, &cell)| cell == Pipe::Start)
+            .find(|(_x, _y, &cell)| cell == Pipe::Start)
             .ok_or (anyhow!("Start loc not found"))?;
 
         let start = (start_cell.0, start_cell.1).into();
@@ -122,7 +131,8 @@ impl PipeMaze {
         Ok(PipeMaze { pipes, start })
     }
 
-    fn replace_start (&mut self, first_dir: Direction, last_dir: Direction) {
+    /// Return the kind of type matching a pair of directions
+    fn get_start_pipe_type (first_dir: Direction, last_dir: Direction) -> Pipe{
 
         let pipe = match (first_dir, last_dir) {
             (Direction::Up, Direction::Up) | (Direction::Down, Direction::Down) => Pipe::Vertical,
@@ -134,9 +144,7 @@ impl PipeMaze {
             _ => unreachable!()
         };
 
-        dbg!(self.start);
-
-        *self.pipes.sample_mut(self.start) = pipe;
+        pipe
     }
 
     /// Search for a loop, given an initial direction `first_dir`.
@@ -150,12 +158,10 @@ impl PipeMaze {
         let mut loop_trail = Trail::new();
         let mut loc = self.start;
         let mut direction = first_dir;
-        let mut len = 0;
 
         loop {
 
             // Move on in the direction we are facing
-            len += 1;
             loc = loc.next(direction);
             let Some(pipe) = self.pipes.try_sample(loc) else { break None };
             loop_trail.insert(loc, *pipe);
@@ -186,11 +192,13 @@ impl PipeMaze {
                 _ => None,
             };
 
+            // Stop if we don't have a connection with the next pipe
             let Some (new_dir) = new_direction else { break None };
             direction = new_dir;
         }
     }
 
+    /// Compute the number empty tiles that are enclosed by the giant loop
     fn compute_enclosed_area (&self, loop_trail: Trail) -> usize {
 
         let mut enclosed = 0;
@@ -198,8 +206,7 @@ impl PipeMaze {
         // Scan the area row by row
         for y in 0..self.pipes.height() {
 
-            println!("{}", y);
-
+            // We start outside, and we have not seen any corner yet
             let mut inside = false;
             let mut prev_corner: Option<Pipe> = None;
 
@@ -207,73 +214,55 @@ impl PipeMaze {
             for x in 0..self.pipes.width() {
 
                 // Do we cross a vertical part of the loop ?
-                let coo = (x, y).into();
-                if let Some(&pipe) = loop_trail.get(&coo) {
+                if let Some(&pipe) = loop_trail.get(&(x, y).into()) {
 
                     // Obvious vertical part, we flip the inside flag
                     if pipe == Pipe::Vertical { inside = !inside }
 
-                    // Subtle vertical part through 2 corners
+                    // A pair of corner makes us cross the boundary one or two times
                     if pipe.is_corner() {
 
                         // Simple or double-crossing ?
                         if let Some (corner) = prev_corner {
-                            if corner.same_corner_parity(&pipe) {
-                                inside = !inside;
-                                if inside { print!(">") } else { print!("^"); }
-                            }
+                            if corner.same_corner_parity(&pipe) { inside = !inside; }
                             prev_corner = None;
                         }
 
-                        // The first corner is just recorded and resoled when the second is encountered
+                        // The first corner is just recorded and resolved when the second is encountered
                         else {
                             prev_corner = Some(pipe);
                         }
                     }
-
-                    print!("{}", pipe.to_char());
                 }
 
                 // Not on the trail, we use the flag to know if the tile is inside or not
-                else if inside { enclosed += 1; print!("i"); }
-                else { print!(".");}
+                else if inside { enclosed += 1 }
             }
 
             assert_eq!(inside, false);
-            stdout().flush().unwrap();
         }
 
         enclosed
     }
 }
 
-/// Solve first part of the puzzle
-fn part_a (content: &[&str]) -> Result<usize> {
+/// Solve both parts of the puzzle
+fn solve (content: &[&str]) -> Result<(usize, usize)> {
 
     let maze = PipeMaze::new(content)?;
 
+    // Test the possible directions until we find a loop
     for dir in Direction::iter() {
-        if let Some ((loop_trail, last_dir)) = maze.find_loop (dir) {
-            return Ok(loop_trail.len() / 2)
-        }
-    }
+        if let Some ((mut loop_trail, last_dir)) = maze.find_loop (dir) {
 
-    bail!("No loop found");
-}
+            // Replace the start position 'S' by the correct pipe
+            let start_pipe = PipeMaze::get_start_pipe_type(dir, last_dir);
+            loop_trail.entry (maze.start).and_modify(|pipe| {*pipe = start_pipe; });
 
-/// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
-
-    let mut maze = PipeMaze::new(content)?;
-    println!("{}", maze.pipes);
-
-    for dir in Direction::iter() {
-        if let Some ((loop_trail, last_dir)) = maze.find_loop (dir) {
-
-            maze.replace_start(dir, last_dir);
-            println!("{}", maze.pipes);
+            let distance = loop_trail.len() / 2;
             let enclosed = maze.compute_enclosed_area(loop_trail);
-            return Ok(enclosed)
+
+            return Ok((distance, enclosed))
         }
     }
 
@@ -282,12 +271,11 @@ fn part_b (content: &[&str]) -> Result<usize> {
 
 pub fn day_10 (content: &[&str]) -> Result <(Solution, Solution)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 8);
-    debug_assert!(part_b (&split(TEST_2)).unwrap_or_default() == 4);
-    debug_assert!(part_b (&split(TEST_3)).unwrap_or_default() == 8);
+    debug_assert!(solve (&split(TEST)).unwrap_or_default().0 == 8);
+    debug_assert!(solve (&split(TEST_2)).unwrap_or_default().1 == 4);
+    debug_assert!(solve (&split(TEST_3)).unwrap_or_default().1 == 8);
 
-    let ra = part_a(content)?;
-    let rb = part_b(content)?;
+    let (ra, rb) = solve(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }

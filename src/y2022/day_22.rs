@@ -116,7 +116,7 @@ impl Board {
     fn new(content: &[&str], cube_mode: bool) -> Result<Board> {
 
         // Load the board content
-        let mut area = CellArea::new(content)?;
+        let area = CellArea::new(content)?;
 
         // Start direction and location
         let direction = Direction::Right;
