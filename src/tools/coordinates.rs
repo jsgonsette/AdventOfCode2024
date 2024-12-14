@@ -49,6 +49,18 @@ impl Coo_ {
             y: self.y + step.1,
         }
     }
+
+    pub fn try_next(&self, direction: Direction, width: usize, height: usize) -> Option<Coo_> {
+        let next_coo = self.next(direction);
+        if next_coo.x < 0 ||
+            next_coo.y < 0 ||
+            next_coo.x >= width as isize ||
+            next_coo.y >= height as isize {
+            None
+        } else {
+            Some(next_coo)
+        }
+    }
 }
 
 impl Direction {

@@ -2,6 +2,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Cell, CellArea, Solution};
+use crate::tools::{Coo_, Direction};
 
 const TEST: &str = "\
 ....#.....
@@ -20,12 +21,12 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-type Coo = (usize, usize);
+//type Coo = (usize, usize);
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+/*#[derive(Copy, Clone, Debug, PartialEq)]
 enum Direction {
     Left, Right, Up, Down
-}
+}*/
 
 /// The state of a lab location
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -51,7 +52,7 @@ struct Lab {
     visited: Vec<History>,
 
     /// Guard location
-    guard: Option<Coo>,
+    guard: Option<Coo_>,
 
     /// Guard moving direction
     guard_dir: Direction,
@@ -89,6 +90,7 @@ impl History {
     }
 }
 
+/*
 impl Direction {
     fn turn (self) -> Self {
         match self {
@@ -99,7 +101,7 @@ impl Direction {
         }
     }
 
-    fn next_coo (&self, coo: Coo, width: usize, height: usize) -> Option<Coo> {
+    fn next_coo (&self, coo: Coo_, width: usize, height: usize) -> Option<Coo_> {
 
         let x = coo.0 as isize;
         let y = coo.1 as isize;
@@ -114,7 +116,7 @@ impl Direction {
         if nx < 0 || nx >= width as isize || ny < 0 || ny >= height as isize { None }
         else { Some ((nx as usize, ny as usize)) }
     }
-}
+}*/
 
 /// To help debugging
 impl Display for Lab {
@@ -142,8 +144,6 @@ impl Display for Lab {
     }
 }
 
-
-
 impl Lab {
 
     /// New playground instance from puzzle file content
@@ -169,7 +169,7 @@ impl Lab {
                 area,
                 visited,
                 guard_dir,
-                guard: Some((guard_x, guard_y))
+                guard: Some((guard_x, guard_y).into ())
             }
         )
     }
@@ -180,10 +180,10 @@ impl Lab {
         if let Some (pos) = self.guard {
             *self.area.sample_mut(pos) = LabCell::Empty;
 
-            let next = self.guard_dir.next_coo(pos, self.area.width (), self.area.height ());
+            let next = pos.try_next(self.guard_dir, self.area.width (), self.area.height ());
             if let Some(pos_next) = next {
                 if !self.is_empty(pos_next) {
-                    self.guard_dir = self.guard_dir.turn();
+                    self.guard_dir = self.guard_dir.to_right();
                 }
                 else {
                     self.guard = next;
@@ -203,13 +203,13 @@ impl Lab {
     }
 
     /// Put a block at the specified `pos`
-    fn put_block(&mut self, pos: Coo) {
+    fn put_block(&mut self, pos: Coo_) {
         *self.area.sample_mut(pos) = LabCell::Obstruction
     }
 
     /// Mark the given position `coo` and direction `dir` as visited
-    fn mark_visited (&mut self, coo: Coo, dir: Direction) {
-        let history = &mut self.visited [coo.1 * self.area.width () + coo.0];
+    fn mark_visited (&mut self, coo: Coo_, dir: Direction) {
+        let history = &mut self.visited [coo.y as usize * self.area.width () + coo.x as usize];
         match dir {
             Direction::Left => history.left = true,
             Direction::Right => history.right = true,
@@ -224,8 +224,8 @@ impl Lab {
     }
 
     /// Check if the given position `coo` and `direction` has already been visited
-    fn is_already_visited(&self, coo: Coo, direction: Direction) -> bool {
-        let history = &self.visited [coo.1 * self.area.width () + coo.0];
+    fn is_already_visited(&self, coo: Coo_, direction: Direction) -> bool {
+        let history = &self.visited [coo.y as usize * self.area.width () + coo.x as usize];
         match direction {
             Direction::Left => history.left,
             Direction::Right => history.right,
@@ -235,13 +235,13 @@ impl Lab {
     }
 
     /// Return an iterator on all the visited coordinates
-    fn get_visited_history (&self) -> impl Iterator<Item = Coo> + '_ {
+    fn get_visited_history (&self) -> impl Iterator<Item = Coo_> + '_ {
 
         (0..self.area.width()).flat_map(move |x| {
             (0..self.area.height()).filter_map(move |y| {
                 let index = y * self.area.width() + x;
                 match self.visited [index].is_visited() {
-                    true => Some ((x, y)),
+                    true => Some ((x, y).into()),
                     false => None,
                 }
             })
@@ -252,11 +252,11 @@ impl Lab {
         self.visited[coo.1 * self.area.width () + coo.0]
     }
 
-    fn is_empty (&self, coo: (usize, usize)) -> bool {
+    fn is_empty (&self, coo: Coo_) -> bool {
         *self.area.sample(coo) == LabCell::Empty
     }
 
-    fn get_guard_position (&self) -> Option<(Coo, Direction)> {
+    fn get_guard_position (&self) -> Option<(Coo_, Direction)> {
         self.guard.map(|pos| Some ((pos, self.guard_dir))).unwrap_or_default()
     }
 }

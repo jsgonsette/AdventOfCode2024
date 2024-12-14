@@ -173,7 +173,7 @@ impl Rules {
 }
 
 /// Return an iterator on the updates of the puzzle file content
-fn read_updates_2<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a {
+fn read_updates<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a {
 
     let mut reader = RowReader::new();
     content.iter().map(move |row| {
@@ -186,7 +186,7 @@ fn part_a (content: &[&str]) -> Result<usize> {
 
     // Extract the rules and the list of updates
     let rules = Rules::new(content)?;
-    let updates_it = read_updates_2(&content[rules.num_rules()+1 ..]);
+    let updates_it = read_updates(&content[rules.num_rules()+1 ..]);
 
     // Sum the middle number of all the correct updates
     let sum: u32 = updates_it.map (|update| {
@@ -207,7 +207,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
 
     // Extract the rules and the list of updates
     let rules = Rules::new(content)?;
-    let updates_it = read_updates_2(&content[rules.num_rules()+1 ..]);
+    let updates_it = read_updates(&content[rules.num_rules()+1 ..]);
 
     // Sum the middle number of all the wrong updates, after correction
     let mut sum = 0;

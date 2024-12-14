@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
-use crate::tools::{Coo, Direction};
+use crate::tools::{Coo_, Direction};
 
 const TEST: &str = "\
 RRRRIICCFF
@@ -98,7 +98,7 @@ impl Garden {
 
             // If the location has not been visited yet, compute the corresponding region ...
             if self.tiles.sample((x, y)).visited == false {
-                let region = self.calculate_region((x as isize, y as isize));
+                let region = self.calculate_region((x, y).into ());
 
                 // ... and its price
                 tot_price += region.perimeter * region.area;
@@ -110,19 +110,19 @@ impl Garden {
     }
 
     /// Calculate the characteristics of a region, provided a representative location `coo`
-    fn calculate_region (&mut self, coo: Coo) -> Region {
+    fn calculate_region (&mut self, coo: Coo_) -> Region {
 
         let mut area = 0;
 
         // Keep track of all the fence positions (loc. and direction pointing to the fence)
-        let mut fences = HashSet::<(Coo, Direction)>::new();
+        let mut fences = HashSet::<(Coo_, Direction)>::new();
 
         // DFS queue, starting with the initial coordinate
-        let mut queue: Vec<Coo> = Vec::with_capacity(self.tiles.area());
+        let mut queue: Vec<Coo_> = Vec::with_capacity(self.tiles.area());
         queue.push(coo);
 
         // Visit the first tile and record the plant type
-        let first_tile = self.tiles.sample_mut((coo.0 as usize, coo.1 as usize));
+        let first_tile = self.tiles.sample_mut(coo);
         first_tile.visited = true;
         let plant_type = first_tile.plant;
 
@@ -134,8 +134,7 @@ impl Garden {
             for dir in Direction::iter() {
 
                 // Get the adjacent location
-                let step = dir.step();
-                let next_coo = (coo.0 + step.0, coo.1 + step.1);
+                let next_coo = coo.next(dir);
 
                 // Get the tile there
                 if let Some (next_tile) = self.tiles.try_sample_mut(next_coo) {
@@ -165,7 +164,7 @@ impl Garden {
     /// Count the number of sides given a collection of `fences`.
     ///
     /// *Each straight section of fence counts as a side*
-    fn count_fence_sides (fences: &HashSet::<(Coo, Direction)>) -> u32 {
+    fn count_fence_sides (fences: &HashSet::<(Coo_, Direction)>) -> u32 {
 
         let mut sides = 0;
 
@@ -175,15 +174,13 @@ impl Garden {
 
                 // On top or on bottom ? count for +1 only if no fence on the left
                 Direction::Up | Direction::Down => {
-                    let step = Direction::Left.step();
-                    let on_left = (coo.0 + step.0, coo.1 + step.1);
+                    let on_left = coo.next(Direction::Left);
                     if !fences.contains(&(on_left, *dir)) { sides += 1 }
                 },
 
                 // On left or on right ? count for +1 only if no fence on the top
                 Direction::Left | Direction::Right => {
-                    let step = Direction::Up.step();
-                    let on_top = (coo.0 + step.0, coo.1 + step.1);
+                    let on_top = coo.next(Direction::Up);
                     if !fences.contains(&(on_top, *dir)) { sides += 1 }
                 },
             }

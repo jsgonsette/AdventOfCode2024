@@ -4,7 +4,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 
-pub use coordinates::{Direction, Coo, Coo_};
+pub use coordinates::{Direction, Coo_};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Sign { Positive, Negative }
@@ -263,11 +263,12 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// Get the cell at some location `coo`
-    pub fn sample (&self, coo: (usize, usize)) -> &T {
-        &self.cells[coo.1 * self.width + coo.0]
+    pub fn sample (&self, coo:impl Into<Coo_>) -> &T {
+        let coo = coo.into();
+        &self.cells[coo.y as usize * self.width + coo.x as usize]
     }
 
-    //pub fn sample_mut (&mut self, coo: (usize, usize)) -> &mut T {
+    /// Get the mutable cell at some location `coo`
     pub fn sample_mut (&mut self, coo:impl Into<Coo_>) -> &mut T {
         let coo = coo.into();
         &mut self.cells[coo.y as usize * self.width + coo.x as usize]
@@ -281,6 +282,7 @@ impl<T: Cell> CellArea<T> {
         Some (self.sample((coo.x as usize, coo.y as usize)))
     }
 
+    /// Try getting a mutable reference on the cell at some `coo`
     pub fn try_sample_mut (&mut self, coo:impl Into<Coo_>) -> Option<&mut T> {
         let coo = coo.into();
         if coo.x < 0 || coo.x >= self.width as isize { return None }
