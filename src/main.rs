@@ -51,6 +51,8 @@ fn main() -> Result<()> {
     solve_year(Y2023, 10..10);
     solve_year(Y2024, ..);
 
+    benchmark_year(&Y2024);
+
     Ok(())
 }
 
