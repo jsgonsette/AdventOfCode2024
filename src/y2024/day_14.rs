@@ -99,7 +99,7 @@ impl Bathroom {
         let mut reader = RowReader::new(true);
         content.iter().map (|&row|{
 
-            let vector: [isize; 4] = reader.process_signed_row_fix(row)
+            let vector: [isize; 4] = reader.process_row_fix(row)
                 .ok_or(anyhow!("Could not parse row: {row}"))?;
 
             Ok(Robot {

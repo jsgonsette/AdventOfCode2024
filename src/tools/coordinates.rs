@@ -7,6 +7,7 @@ pub enum Direction {
 /// To help iterate on the directions
 static DIRECTIONS: &[Direction] = &[Direction::Up, Direction::Down, Direction::Left, Direction::Right];
 
+/// A 2-D coordinate
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Coo {
     pub x: isize,

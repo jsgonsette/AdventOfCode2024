@@ -177,7 +177,7 @@ fn read_updates<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a
 
     let mut reader = RowReader::new(false);
     content.iter().map(move |row| {
-        reader.iter_row(row).map(|v| v as u32).collect()
+        reader.iter_row(row).collect()
     })
 }
 

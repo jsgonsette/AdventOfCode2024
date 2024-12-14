@@ -22,41 +22,33 @@ impl RowReader {
         RowReader { built_number: None, sign: Sign::Positive, allow_negative }
     }
 
-    /// Iterate on all the numbers contained in a row, ignoring non-digit characters.
-    pub fn iter_row<'a> (&'a mut self, row:&'a str) -> impl Iterator<Item=usize> + 'a {
-
+    /// Iterate on all the [Integer] numbers contained in a row, ignoring non-digit characters.
+    pub fn iter_row<'a, T> (&'a mut self, row:&'a str) -> impl Iterator<Item=T> + 'a
+    where T: Integer + TryFrom<isize> + 'a
+    {
         let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
         row_it.flat_map(|&b| {
-            self.process_byte(b).map(|value| value as usize)
-        })
-    }
-
-    pub fn iter_signed_row<'a> (&'a mut self, row:&'a str) -> impl Iterator<Item=isize> + 'a {
-
-        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
-        row_it.flat_map(|&b| {
-            self.process_byte(b)
-        })
-    }
-
-    pub fn process_row_<T: Integer + TryFrom<usize>> (&mut self, row: &str) -> Vec<T> {
-
-        self.iter_row(row).map (
-            |value| {
-                //let value = if self.allow_negative { value } else { value.ab () };
+            self.process_byte(b).map(|value| {
+                let value = if self.allow_negative { value } else { value.abs () };
                 T::try_from(value).ok().expect("Value to big to be converted")
-            }
-        ).collect()
+            })
+        })
     }
 
-    /// Convert a row into a variable size vector of numbers.
-    /// All non-digit characters are ignored.
-    pub fn process_row (&mut self, row: &str) -> Vec<usize> {
+    /// Return a vector containing all the [Integer] numbers detected in the provided `row`.
+    /// All the non-digit characters are ignored.
+    pub fn process_row<T> (&mut self, row: &str) -> Vec<T>
+    where T: Integer + TryFrom<isize> {
         self.iter_row(row).collect()
     }
 
-    pub fn process_row_fix<const N: usize> (&mut self, row: &str) -> Option<[usize; N]> {
-        let mut v = [0; N];
+    /// Return a fixed-size vector containing all the [Integer] numbers detected in the provided `row`.
+    /// All the non-digit characters are ignored.
+    /// ## Panic
+    /// **The function fails if the exact number of numbers is not found.**
+    pub fn process_row_fix<T, const N: usize> (&mut self, row: &str) -> Option<[T; N]>
+    where T: Integer + TryFrom<isize> + Copy {
+        let mut v = [T::zero(); N];
         let mut idx = 0;
 
         let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
@@ -66,35 +58,9 @@ impl RowReader {
             match self.process_byte(b) {
                 Some (number) => {
                     if idx < N {
-                        v[idx] = number.abs() as usize;
-                        idx += 1;
-                    }
-                    else { return None; }
-                },
-                None => {},
-            }
-        }
-
-        match idx {
-            _ if idx == N => Some (v),
-            _ => None
-        }
-    }
-
-    /// Convert a row into a fixed-size vector of numbers. All non-digit characters are ignored.
-    /// The function fails if the exact number of numbers is not found.
-    pub fn process_signed_row_fix<const N: usize> (&mut self, row: &str) -> Option<[isize; N]> {
-        let mut v = [0; N];
-        let mut idx = 0;
-
-        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
-        for &b in row_it {
-
-            // Process the next byte and eventually collect a number
-            match self.process_byte(b) {
-                Some (number) => {
-                    if idx < N {
-                        v[idx] = number;
+                        let number = if self.allow_negative { number } else { number.abs () };
+                        let converted_number = T::try_from(number).ok().expect("Value to big to be converted");
+                        v[idx] = converted_number;
                         idx += 1;
                     }
                     else { return None; }
