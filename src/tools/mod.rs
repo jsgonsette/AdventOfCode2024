@@ -3,8 +3,8 @@ mod coordinates;
 use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
-
-pub use coordinates::{Direction, Coo_};
+use num::Integer;
+pub use coordinates::{Direction, Coo};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Sign { Positive, Negative }
@@ -13,23 +13,13 @@ enum Sign { Positive, Negative }
 pub struct RowReader {
     built_number: Option<usize>,
     sign: Sign,
+    allow_negative: bool,
 }
 
 impl RowReader {
 
-    pub fn new() -> RowReader {
-        RowReader { built_number: None, sign: Sign::Positive }
-    }
-
-    pub fn _iter_numbers_fix<'a, const N: usize> (
-        &'a mut self,
-        content: &'a [&'a str],
-    ) -> impl Iterator<Item=Result<[usize; N]>> + 'a {
-
-        // Deliver a fixed size vector for each row
-        content.iter().map(|row| {
-            self.process_row_fix(row).ok_or(anyhow!("Invalid row: {row}"))
-        })
+    pub fn new(allow_negative: bool) -> RowReader {
+        RowReader { built_number: None, sign: Sign::Positive, allow_negative }
     }
 
     /// Iterate on all the numbers contained in a row, ignoring non-digit characters.
@@ -37,7 +27,7 @@ impl RowReader {
 
         let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
         row_it.flat_map(|&b| {
-            self.process_byte(b)
+            self.process_byte(b).map(|value| value as usize)
         })
     }
 
@@ -45,8 +35,18 @@ impl RowReader {
 
         let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
         row_it.flat_map(|&b| {
-            self.process_signed_byte(b)
+            self.process_byte(b)
         })
+    }
+
+    pub fn process_row_<T: Integer + TryFrom<usize>> (&mut self, row: &str) -> Vec<T> {
+
+        self.iter_row(row).map (
+            |value| {
+                //let value = if self.allow_negative { value } else { value.ab () };
+                T::try_from(value).ok().expect("Value to big to be converted")
+            }
+        ).collect()
     }
 
     /// Convert a row into a variable size vector of numbers.
@@ -55,9 +55,35 @@ impl RowReader {
         self.iter_row(row).collect()
     }
 
+    pub fn process_row_fix<const N: usize> (&mut self, row: &str) -> Option<[usize; N]> {
+        let mut v = [0; N];
+        let mut idx = 0;
+
+        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
+        for &b in row_it {
+
+            // Process the next byte and eventually collect a number
+            match self.process_byte(b) {
+                Some (number) => {
+                    if idx < N {
+                        v[idx] = number.abs() as usize;
+                        idx += 1;
+                    }
+                    else { return None; }
+                },
+                None => {},
+            }
+        }
+
+        match idx {
+            _ if idx == N => Some (v),
+            _ => None
+        }
+    }
+
     /// Convert a row into a fixed-size vector of numbers. All non-digit characters are ignored.
     /// The function fails if the exact number of numbers is not found.
-    pub fn process_row_fix<const N: usize> (&mut self, row: &str) -> Option<[usize; N]> {
+    pub fn process_signed_row_fix<const N: usize> (&mut self, row: &str) -> Option<[isize; N]> {
         let mut v = [0; N];
         let mut idx = 0;
 
@@ -83,34 +109,8 @@ impl RowReader {
         }
     }
 
-    pub fn process_signed_row_fix<const N: usize> (&mut self, row: &str) -> Option<[isize; N]> {
-        let mut v = [0; N];
-        let mut idx = 0;
-
-        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
-        for &b in row_it {
-
-            // Process the next byte and eventually collect a number
-            match self.process_signed_byte(b) {
-                Some (number) => {
-                    if idx < N {
-                        v[idx] = number;
-                        idx += 1;
-                    }
-                    else { return None; }
-                },
-                None => {},
-            }
-        }
-
-        match idx {
-            _ if idx == N => Some (v),
-            _ => None
-        }
-    }
-
-
-    fn process_signed_byte (&mut self, byte: u8) -> Option<isize> {
+    /// Process the next ASCII character `byte` and optionally yield a number.
+    fn process_byte(&mut self, byte: u8) -> Option<isize> {
         match byte as char  {
             '0' ..= '9' => {
                 let current = self.built_number.unwrap_or_default();
@@ -136,20 +136,6 @@ impl RowReader {
         }
     }
 
-    fn process_byte (&mut self, byte: u8) -> Option<usize> {
-        match byte as char  {
-            '0' ..= '9' => {
-                let current = self.built_number.unwrap_or_default();
-                self.built_number = Some(current*10 + (byte - '0' as u8) as usize);
-                None
-            },
-            _ => {
-                let out = self.built_number;
-                self.built_number = None;
-                out
-            },
-        }
-    }
 }
 
 /// Models a rectangular area made of generic [Cell]
@@ -263,19 +249,19 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// Get the cell at some location `coo`
-    pub fn sample (&self, coo:impl Into<Coo_>) -> &T {
+    pub fn sample (&self, coo:impl Into<Coo>) -> &T {
         let coo = coo.into();
         &self.cells[coo.y as usize * self.width + coo.x as usize]
     }
 
     /// Get the mutable cell at some location `coo`
-    pub fn sample_mut (&mut self, coo:impl Into<Coo_>) -> &mut T {
+    pub fn sample_mut (&mut self, coo:impl Into<Coo>) -> &mut T {
         let coo = coo.into();
         &mut self.cells[coo.y as usize * self.width + coo.x as usize]
     }
 
     /// Try getting a reference on the cell at some `coo`
-    pub fn try_sample (&self, coo:impl Into<Coo_>) -> Option<&T> {
+    pub fn try_sample (&self, coo:impl Into<Coo>) -> Option<&T> {
         let coo = coo.into();
         if coo.x < 0 || coo.x >= self.width as isize { return None }
         if coo.y < 0 || coo.y >= self.height as isize { return None }
@@ -283,7 +269,7 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// Try getting a mutable reference on the cell at some `coo`
-    pub fn try_sample_mut (&mut self, coo:impl Into<Coo_>) -> Option<&mut T> {
+    pub fn try_sample_mut (&mut self, coo:impl Into<Coo>) -> Option<&mut T> {
         let coo = coo.into();
         if coo.x < 0 || coo.x >= self.width as isize { return None }
         if coo.y < 0 || coo.y >= self.height as isize { return None }

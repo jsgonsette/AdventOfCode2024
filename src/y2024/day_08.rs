@@ -4,7 +4,7 @@ use anyhow::*;
 use itertools;
 use itertools::Itertools;
 use crate::{Cell, CellArea, Solution};
-use crate::tools::Coo_;
+use crate::tools::Coo;
 
 const TEST: &str = "\
 ............
@@ -41,7 +41,7 @@ struct Map {
     area: CellArea<CellAntenna>,
 
     /// For each antenna frequency, we retain the corresponding antennas on the map
-    antennas: HashMap<Frequency, Vec<Coo_>>,
+    antennas: HashMap<Frequency, Vec<Coo>>,
 }
 
 impl Cell for CellAntenna {
@@ -80,7 +80,7 @@ impl Map {
 
         // Collect the antennas by frequencies.
         // For each frequency, collect the matching coordinates
-        let mut antenna: HashMap<Frequency, Vec<Coo_>> = HashMap::new();
+        let mut antenna: HashMap<Frequency, Vec<Coo>> = HashMap::new();
         for (x, y, cell) in area.iter_cells() {
             if let Some(frequency) = cell.frequency {
                 antenna.entry(frequency).or_default().push((x, y).into());
@@ -107,7 +107,7 @@ impl Map {
 
                 // Mark the map with an antinode and track their quantity. Return true
                 // if the coordinate in on map.
-                let mut mark_cell = |coo: Coo_| {
+                let mut mark_cell = |coo: Coo| {
                     if let Some (cell) = self.area.try_sample_mut(coo) {
                         if cell.antinode == 0 { count += 1 }
                         cell.antinode += 1;

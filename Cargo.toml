@@ -2,13 +2,12 @@
 name = "adv-code-2024"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Jean-Sébastien Gonsette"]
 
 [dependencies]
 anyhow = "1.0.93"
-code-timing-macros = { version = "0.0.5", features = ["release"] }
-const_format = "0.2.33"
 itertools = "0.13.0"
-regex = "1.11.1"
 nalgebra = "0.33"
 num = "0.4"
 petgraph = "0.6"

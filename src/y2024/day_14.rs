@@ -3,7 +3,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Solution};
-use crate::tools::{Coo_, RowReader};
+use crate::tools::{Coo, RowReader};
 
 const TEST: &str = "\
 p=0,4 v=3,-3
@@ -23,8 +23,8 @@ p=9,5 v=-3,-3
 /// Model a robot position and velocity
 #[derive(Debug, Copy, Clone)]
 struct Robot {
-    pos: Coo_,
-    velocity: Coo_,
+    pos: Coo,
+    velocity: Coo,
 }
 
 /// Models the bathroom and its swarm of robots
@@ -46,7 +46,7 @@ impl Display for Bathroom {
     /// Draw the bathroom and the location of the swarm
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 
-        let positions: HashSet<Coo_> = HashSet::from_iter(
+        let positions: HashSet<Coo> = HashSet::from_iter(
             self.swarm.iter().map(|robot | robot.pos)
         );
 
@@ -96,7 +96,7 @@ impl Bathroom {
     /// Collect the positions and velocities of all the robots, based on the puzzle file `content`
     fn collect_robots (content: &[&str]) -> Result<Vec<Robot>> {
 
-        let mut reader = RowReader::new();
+        let mut reader = RowReader::new(true);
         content.iter().map (|&row|{
 
             let vector: [isize; 4] = reader.process_signed_row_fix(row)

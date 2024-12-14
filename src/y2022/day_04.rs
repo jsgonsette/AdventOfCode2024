@@ -30,7 +30,7 @@ fn split (content: &str) -> Vec<&str> {
 
 fn read_ranges (row: &str) -> Result<(Range, Range)> {
 
-    let mut reader = RowReader::new ();
+    let mut reader = RowReader::new (false);
     let ranges: [usize; 4] = reader.process_row_fix(row)
         .ok_or(anyhow!("Error reading line {row}"))?;
 

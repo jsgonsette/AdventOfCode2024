@@ -19,7 +19,7 @@ fn split (content: &str) -> Vec<&str> {
 /// Create two vectors from the puzzle file content
 fn make_two_lists (content: &[&str]) -> Result<(Vec<usize>, Vec<usize>)> {
 
-    let mut reader = RowReader::new();
+    let mut reader = RowReader::new(false);
 
     let pairs = content.iter().map_while (| row | {
         let pair: [usize; 2] = reader.process_row_fix::<2>(row)?;

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
-use crate::tools::{Coo_, Direction};
+use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
 RRRRIICCFF
@@ -110,15 +110,15 @@ impl Garden {
     }
 
     /// Calculate the characteristics of a region, provided a representative location `coo`
-    fn calculate_region (&mut self, coo: Coo_) -> Region {
+    fn calculate_region (&mut self, coo: Coo) -> Region {
 
         let mut area = 0;
 
         // Keep track of all the fence positions (loc. and direction pointing to the fence)
-        let mut fences = HashSet::<(Coo_, Direction)>::new();
+        let mut fences = HashSet::<(Coo, Direction)>::new();
 
         // DFS queue, starting with the initial coordinate
-        let mut queue: Vec<Coo_> = Vec::with_capacity(self.tiles.area());
+        let mut queue: Vec<Coo> = Vec::with_capacity(self.tiles.area());
         queue.push(coo);
 
         // Visit the first tile and record the plant type
@@ -164,7 +164,7 @@ impl Garden {
     /// Count the number of sides given a collection of `fences`.
     ///
     /// *Each straight section of fence counts as a side*
-    fn count_fence_sides (fences: &HashSet::<(Coo_, Direction)>) -> u32 {
+    fn count_fence_sides (fences: &HashSet::<(Coo, Direction)>) -> u32 {
 
         let mut sides = 0;
 

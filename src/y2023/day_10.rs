@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::{stdout, Write};
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
-use crate::tools::{Coo_, Direction};
+use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
 7-F7-
@@ -66,11 +66,11 @@ impl Pipe {
         }
     }
 }
-type Trail = HashMap<Coo_, Pipe>;
+type Trail = HashMap<Coo, Pipe>;
 
 struct PipeMaze {
     pipes: CellArea<Pipe>,
-    start: Coo_,
+    start: Coo,
 }
 
 impl Default for Pipe {

@@ -61,7 +61,7 @@ impl Rules {
     fn new (content: &[&str]) -> Result<Rules> {
 
         // Load the list of rules until we detect the empty line
-        let mut reader = RowReader::new();
+        let mut reader = RowReader::new(false);
         let list_rules: Vec<(Page, Page)> = content.iter ().map_while(|row| {
 
             // End of rule on empty line
@@ -175,7 +175,7 @@ impl Rules {
 /// Return an iterator on the updates of the puzzle file content
 fn read_updates<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a {
 
-    let mut reader = RowReader::new();
+    let mut reader = RowReader::new(false);
     content.iter().map(move |row| {
         reader.iter_row(row).map(|v| v as u32).collect()
     })

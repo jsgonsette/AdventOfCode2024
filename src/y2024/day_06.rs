@@ -2,7 +2,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Cell, CellArea, Solution};
-use crate::tools::{Coo_, Direction};
+use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
 ....#.....
@@ -45,7 +45,7 @@ struct Lab {
     visited: Vec<History>,
 
     /// Guard location
-    guard: Option<Coo_>,
+    guard: Option<Coo>,
 
     /// Guard moving direction
     guard_dir: Direction,
@@ -168,12 +168,12 @@ impl Lab {
     }
 
     /// Put a block at the specified `pos`
-    fn put_block(&mut self, pos: Coo_) {
+    fn put_block(&mut self, pos: Coo) {
         *self.area.sample_mut(pos) = LabCell::Obstruction
     }
 
     /// Mark the given position `coo` and direction `dir` as visited
-    fn mark_visited (&mut self, coo: Coo_, dir: Direction) {
+    fn mark_visited (&mut self, coo: Coo, dir: Direction) {
         let history = &mut self.visited [coo.y as usize * self.area.width () + coo.x as usize];
         match dir {
             Direction::Left => history.left = true,
@@ -189,7 +189,7 @@ impl Lab {
     }
 
     /// Check if the given position `coo` and `direction` has already been visited
-    fn is_already_visited(&self, coo: Coo_, direction: Direction) -> bool {
+    fn is_already_visited(&self, coo: Coo, direction: Direction) -> bool {
         let history = &self.visited [coo.y as usize * self.area.width () + coo.x as usize];
         match direction {
             Direction::Left => history.left,
@@ -200,7 +200,7 @@ impl Lab {
     }
 
     /// Return an iterator on all the visited coordinates
-    fn get_visited_history (&self) -> impl Iterator<Item = Coo_> + '_ {
+    fn get_visited_history (&self) -> impl Iterator<Item =Coo> + '_ {
 
         (0..self.area.width()).flat_map(move |x| {
             (0..self.area.height()).filter_map(move |y| {
@@ -217,11 +217,11 @@ impl Lab {
         self.visited[coo.1 * self.area.width () + coo.0]
     }
 
-    fn is_empty (&self, coo: Coo_) -> bool {
+    fn is_empty (&self, coo: Coo) -> bool {
         *self.area.sample(coo) == LabCell::Empty
     }
 
-    fn get_guard_position (&self) -> Option<(Coo_, Direction)> {
+    fn get_guard_position (&self) -> Option<(Coo, Direction)> {
         self.guard.map(|pos| Some ((pos, self.guard_dir))).unwrap_or_default()
     }
 }
