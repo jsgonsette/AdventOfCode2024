@@ -1,5 +1,6 @@
 use anyhow::*;
 use crate::Solution;
+use crate::tools::RowReader;
 
 const TEST: &str = "\
 2-4,6-8
@@ -13,18 +14,6 @@ const TEST: &str = "\
 #[derive(Copy, Clone, Debug)]
 struct Range (u32, u32);
 
-enum RangeState {
-    LeftA, LeftB, RightA, RightB
-}
-
-struct RangesParser {
-    left_a: u32,
-    left_b: u32,
-    right_a: u32,
-    right_b: u32,
-    state: RangeState,
-}
-
 impl Range {
     fn is_contained_in (&self, other: &Self) -> bool {
         self.0 >= other.0 && self.1 <= other.1
@@ -35,55 +24,19 @@ impl Range {
     }
 }
 
-impl RangesParser {
-    fn new() -> RangesParser {
-        RangesParser {
-            left_a: 0,
-            left_b: 0,
-            right_a: 0,
-            right_b: 0,
-            state: RangeState::LeftA,
-        }
-    }
-
-    fn process(&mut self, c: char) -> Result<()> {
-        let digit = c.to_digit(10);
-        match (&self.state, digit) {
-            (RangeState::LeftA, Some (d)) => { self.left_a = self.left_a*10 + d; },
-            (RangeState::LeftB, Some (d)) => { self.left_b = self.left_b*10 + d;  },
-            (RangeState::RightA, Some (d)) => { self.right_a = self.right_a*10 + d;  },
-            (RangeState::RightB, Some (d)) => { self.right_b = self.right_b*10 + d;  },
-            (RangeState::LeftA, None) if c == '-' => { self.state = RangeState::LeftB;  },
-            (RangeState::RightA, None) if c == '-' => { self.state = RangeState::RightB;  },
-            (RangeState::LeftB, None) if c == ',' => { self.state = RangeState::RightA;  },
-            _ => bail!("Invalid character: '{}'", c),
-        };
-
-        Ok(())
-    }
-
-    fn left_range (&self) -> Range {
-        Range(self.left_a, self.left_b)
-    }
-
-    fn right_range (&self) -> Range {
-        Range(self.right_a, self.right_b)
-    }
-}
-
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
 fn read_ranges (row: &str) -> Result<(Range, Range)> {
-    let mut parser= RangesParser::new();
 
-    for &b in row.as_bytes() {
-        let c = b as char;
-        parser.process(c).map_err(|_e| anyhow!("Invalid row: {}", row))?;
-    }
+    let mut reader = RowReader::new ();
+    let ranges: [usize; 4] = reader.process_row_fix(row)
+        .ok_or(anyhow!("Error reading line {row}"))?;
 
-    Ok((parser.left_range(), parser.right_range()))
+    let left = Range (ranges [0] as u32, ranges [1] as u32);
+    let right = Range (ranges [2] as u32, ranges [3] as u32);
+    Ok((left, right))
 }
 
 fn part_a (content: &[&str]) -> anyhow::Result<usize> {

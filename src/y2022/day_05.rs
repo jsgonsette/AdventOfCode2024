@@ -134,6 +134,7 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Read one move operation from a single row of the puzzle file content
 fn extract_move (row: &str) -> Result<Move> {
 
     let error = || { anyhow!("Invalid row: {}", row) };
@@ -148,26 +149,9 @@ fn extract_move (row: &str) -> Result<Move> {
         to,
         amount,
     })
-
-    /*let init: Vec<u32> = vec! [0];
-    let values = row.as_bytes().iter().skip (5).fold(init, |mut acc, &b| {
-        if b.is_ascii_digit() {
-            let current = acc.last_mut().unwrap();
-            *acc.last_mut().unwrap() = (*current) * 10 + (b - b'0') as u32;
-        }
-        else if b == b' ' { acc.push(0); }
-        acc
-    });
-
-    println!("{:?}", values);
-
-    Ok(Move {
-        from: values [1] as usize,
-        to: values [2] as usize,
-        amount: values [0],
-    })*/
 }
 
+/// Follow the sequence of operations and return the final sequence of top crates.
 fn solve (content: &[&str], crane: Crane)-> Result<String> {
 
     // Extract the first lines dedicated to the initial configuration
