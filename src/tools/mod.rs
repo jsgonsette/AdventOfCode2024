@@ -6,15 +6,19 @@ use itertools::Itertools;
 
 pub use coordinates::{Direction, Coo, Coo_};
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum Sign { Positive, Negative }
+
 /// Reads rows made of numbers
 pub struct RowReader {
     built_number: Option<usize>,
+    sign: Sign,
 }
 
 impl RowReader {
 
     pub fn new() -> RowReader {
-        RowReader { built_number: None }
+        RowReader { built_number: None, sign: Sign::Positive }
     }
 
     pub fn _iter_numbers_fix<'a, const N: usize> (
@@ -34,6 +38,14 @@ impl RowReader {
         let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
         row_it.flat_map(|&b| {
             self.process_byte(b)
+        })
+    }
+
+    pub fn iter_signed_row<'a> (&'a mut self, row:&'a str) -> impl Iterator<Item=isize> + 'a {
+
+        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
+        row_it.flat_map(|&b| {
+            self.process_signed_byte(b)
         })
     }
 
@@ -68,6 +80,59 @@ impl RowReader {
         match idx {
             _ if idx == N => Some (v),
             _ => None
+        }
+    }
+
+    pub fn process_signed_row_fix<const N: usize> (&mut self, row: &str) -> Option<[isize; N]> {
+        let mut v = [0; N];
+        let mut idx = 0;
+
+        let row_it = row.as_bytes().iter().chain(std::iter::once(&0));
+        for &b in row_it {
+
+            // Process the next byte and eventually collect a number
+            match self.process_signed_byte(b) {
+                Some (number) => {
+                    if idx < N {
+                        v[idx] = number;
+                        idx += 1;
+                    }
+                    else { return None; }
+                },
+                None => {},
+            }
+        }
+
+        match idx {
+            _ if idx == N => Some (v),
+            _ => None
+        }
+    }
+
+
+    fn process_signed_byte (&mut self, byte: u8) -> Option<isize> {
+        match byte as char  {
+            '0' ..= '9' => {
+                let current = self.built_number.unwrap_or_default();
+                self.built_number = Some(current*10 + (byte - '0' as u8) as usize);
+                None
+            },
+            _ => {
+                let out = self.built_number.map (|number|
+                    match self.sign {
+                        Sign::Positive => number as isize,
+                        Sign::Negative => - (number as isize),
+                    }
+                );
+                self.built_number = None;
+
+                self.sign = match byte as char {
+                    '-' => Sign::Negative,
+                    _   => Sign::Positive,
+                };
+
+                out
+            },
         }
     }
 
