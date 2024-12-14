@@ -21,13 +21,6 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-//type Coo = (usize, usize);
-
-/*#[derive(Copy, Clone, Debug, PartialEq)]
-enum Direction {
-    Left, Right, Up, Down
-}*/
-
 /// The state of a lab location
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum LabCell {
@@ -89,34 +82,6 @@ impl History {
         self.up || self.down || self.left || self.right
     }
 }
-
-/*
-impl Direction {
-    fn turn (self) -> Self {
-        match self {
-            Direction::Left => Direction::Up,
-            Direction::Right => Direction::Down,
-            Direction::Up => Direction::Right,
-            Direction::Down => Direction::Left,
-        }
-    }
-
-    fn next_coo (&self, coo: Coo_, width: usize, height: usize) -> Option<Coo_> {
-
-        let x = coo.0 as isize;
-        let y = coo.1 as isize;
-
-        let (nx, ny) = match self {
-            Direction::Left => (x-1, y),
-            Direction::Right => (x+1, y),
-            Direction::Up => (x, y-1),
-            Direction::Down => (x, y+1),
-        };
-
-        if nx < 0 || nx >= width as isize || ny < 0 || ny >= height as isize { None }
-        else { Some ((nx as usize, ny as usize)) }
-    }
-}*/
 
 /// To help debugging
 impl Display for Lab {

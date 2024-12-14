@@ -50,6 +50,8 @@ impl Coo_ {
         }
     }
 
+    /// Returns the coordinates resulting from moving one step in the provided `direction`,
+    /// except if the coordinates are not in the area [0; width[ x [0; height[.
     pub fn try_next(&self, direction: Direction, width: usize, height: usize) -> Option<Coo_> {
         let next_coo = self.next(direction);
         if next_coo.x < 0 ||
