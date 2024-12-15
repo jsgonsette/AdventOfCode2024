@@ -70,6 +70,9 @@ impl Pipe {
         }
     }
 }
+
+/// Encodes a trail as a set of coordinates and [Pipe] pairs.
+/// We don't care about the sequence
 type Trail = HashMap<Coo, Pipe>;
 
 /// Models the maze of [pipes](Pipe)
@@ -120,8 +123,10 @@ impl PipeMaze {
     /// New pipe maze instance, based on the puzzle file content
     fn new(content: &[&str]) -> Result<PipeMaze> {
 
+        // Build the area of pipes
         let pipes: CellArea<Pipe> = CellArea::new(content)?;
 
+        // Look for the tile with the start coordinate
         let start_cell = pipes.iter_cells()
             .find(|(_x, _y, &cell)| cell == Pipe::Start)
             .ok_or (anyhow!("Start loc not found"))?;
@@ -221,13 +226,13 @@ impl PipeMaze {
 
                     // A pair of corner makes us cross the boundary one or two times
                     if pipe.is_corner() {
-
-                        // Simple or double-crossing ?
+                        // Second corner
                         if let Some (corner) = prev_corner {
+
+                            // Simple or double-crossing ?
                             if corner.same_corner_parity(&pipe) { inside = !inside; }
                             prev_corner = None;
                         }
-
                         // The first corner is just recorded and resolved when the second is encountered
                         else {
                             prev_corner = Some(pipe);
