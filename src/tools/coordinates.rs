@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 /// The four possible displacements
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Direction {
@@ -62,6 +64,24 @@ impl Coo {
             Some(next_coo)
         }
     }
+
+    /// Iterate on the 8 adjacent coordinates
+    pub fn iter_adjacent_8 (&self) -> impl Iterator<Item = Coo> + '_ {
+
+        let x_it = self.x - 1..=self.x + 1;
+        let y_it = self.y - 1..=self.y + 1;
+
+        x_it.cartesian_product(y_it)
+            .filter(|(x, y)| *x != self.x || *y != self.y)
+            .map(|(x, y)| Coo { x, y })
+    }
+
+    /// Adjusts the coordinates to wrap around a defined 2D area
+    pub fn wrap_around_area (&self, width: usize, height: usize) -> Coo {
+        let x = self.x.rem_euclid(width as isize);
+        let y = self.y.rem_euclid(height as isize);
+        Coo { x, y }
+    }
 }
 
 impl Direction {
@@ -96,6 +116,16 @@ impl Direction {
             Direction::Down => Direction::Right,
             Direction::Left => Direction::Down,
             Direction::Up => Direction::Left,
+        }
+    }
+
+    /// Get the direction resulting from doing a U-turn
+    pub fn flip(&self) -> Direction {
+        match self {
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
         }
     }
 }

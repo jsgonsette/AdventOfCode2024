@@ -47,11 +47,11 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 22..22);
+    solve_year(Y2022, 22..23);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 14..16);
+    solve_year(Y2024, 16..17);
 
-    benchmark_year(&Y2024);
+    //benchmark_year(&Y2024);
 
     Ok(())
 }
