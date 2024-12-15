@@ -31,4 +31,5 @@ Here are the results I get to solve the two parts of the problems:
 | 11  | [Plutonian Pebbles](https://adventofcode.com/2024/day/11)    | [day_11.rs](./src/y2024/day_11.rs) | 13.99      |
 | 12  | [Garden Groups](https://adventofcode.com/2024/day/12)        | [day_12.rs](./src/y2024/day_12.rs) | 2.418      |
 | 13  | [Claw Contraption](https://adventofcode.com/2024/day/13)     | [day_13.rs](./src/y2024/day_13.rs) | 2.004      |
-| 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)     | [day_14.rs](./src/y2024/day_14.rs) | 85.425     |
+| 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)     | [day_14.rs](./src/y2024/day_14.rs) | 34.09      |
+| 15  | [Lanternfish ](https://adventofcode.com/2024/day/15)         | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |

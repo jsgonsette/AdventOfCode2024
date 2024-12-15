@@ -144,7 +144,11 @@ impl<T: Cell> CellArea<T> {
     /// Instantiate the area on the basis of the puzzle file content.
     pub fn new(content: &[&str]) -> anyhow::Result<CellArea<T>> {
 
-        let width = content.iter().map(|line| line.len()).max().unwrap_or(0);
+        let width = content
+            .iter()
+            .take_while(|row| !row.is_empty())
+            .map(|line| line.len()).max().unwrap_or(0);
+
         let cells = Self::load_cell_from_content(content, width)?;
         let height = cells.len () / width;
 

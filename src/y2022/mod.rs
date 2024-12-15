@@ -20,7 +20,7 @@ impl Year for Y2022 {
             2 => Some (day_02::day_2),
             4 => Some (day_04::day_4),
             5 => Some (day_05::day_5),
-            //22=> Some (day_22::day_22),
+            22=> Some (day_22::day_22),
             23=> Some (day_23::day_23),
             24=> Some (day_24::day_24),
             25=> Some (day_25::day_25),
