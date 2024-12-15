@@ -124,7 +124,7 @@ impl Bathroom {
     /// * Setting a trigger value as low as 4 enables to find it without any false positive
     ///
     /// **This means that this technique proves to be quite general and highly effective!**
-    fn find_christmas_tree (&mut self, display_it: bool) -> usize{
+    fn find_christmas_tree_accurate(&mut self, display_it: bool) -> usize{
 
         let mut steps = 0;
         loop {
@@ -136,6 +136,33 @@ impl Bathroom {
                 if display_it {
                     println!("After {} steps:", steps);
                     println!("Score {}:", score_per_robot);
+                    println!("Safety factor {}", self.compute_safety_factor());
+                    println!("{}", self);
+                }
+                break steps;
+            }
+        }
+    }
+
+    /// Second way to find the Christmas tree, using the safety score computed in part 1)
+    /// as a clue. When the robots group together to form the tree, the safety factor drops
+    /// drastically because they are not scattered around as before. As such,
+    /// some quadrants become almost empty.
+    fn find_christmas_tree_fast(&mut self, display_it: bool) -> usize{
+
+        let base_safety_factor = self.compute_safety_factor();
+        let threshold = (base_safety_factor as f32 * 0.45) as usize;
+        let mut steps = 0;
+
+        loop {
+            steps += 1;
+            self.update(1);
+            let safety_factor = self.compute_safety_factor();
+
+            if safety_factor < threshold {
+                if display_it {
+                    println!("After {} steps:", steps);
+                    println!("Safety factor {}", self.compute_safety_factor());
                     println!("{}", self);
                 }
                 break steps;
@@ -216,8 +243,13 @@ fn part_b (content: &[&str], area_width: usize, area_height: usize) -> Result<us
 
     let mut bathroom = Bathroom::new(area_width, area_height, &content)?;
 
-    let display_it = false;
-    let num_steps = bathroom.find_christmas_tree(display_it);
+    static DISPLAY_IT: bool = false;
+    static METHOD_FAST_BUT_LESS_ACCURATE: bool = true;
+
+    let num_steps = match METHOD_FAST_BUT_LESS_ACCURATE {
+       true =>  bathroom.find_christmas_tree_fast(DISPLAY_IT),
+       false => bathroom.find_christmas_tree_accurate(DISPLAY_IT),
+    } ;
 
     Ok(num_steps)
 }
