@@ -32,4 +32,5 @@ Here are the results I get to solve the two parts of the problems:
 | 12  | [Garden Groups](https://adventofcode.com/2024/day/12)        | [day_12.rs](./src/y2024/day_12.rs) | 2.418      |
 | 13  | [Claw Contraption](https://adventofcode.com/2024/day/13)     | [day_13.rs](./src/y2024/day_13.rs) | 2.004      |
 | 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)     | [day_14.rs](./src/y2024/day_14.rs) | 34.09      |
-| 15  | [Lanternfish ](https://adventofcode.com/2024/day/15)         | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |
+| 15  | [Lanternfish](https://adventofcode.com/2024/day/15)          | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |
+| 16  | [Reindeer Maze](https://adventofcode.com/2024/day/16)        | [day_16.rs](./src/y2024/day_16.rs) | 9.332      |
