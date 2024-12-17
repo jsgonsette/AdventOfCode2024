@@ -49,7 +49,7 @@ fn main() -> Result<()> {
 
     solve_year(Y2022, 21..22);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 17..18);
+    solve_year(Y2024, 17..19);
 
     //benchmark_year(&Y2024);
 

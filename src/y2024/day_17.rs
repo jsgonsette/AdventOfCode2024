@@ -164,7 +164,7 @@ impl Computer {
         program
     }
 
-    /// Execute the provided `ins` instruction, eventually update the `output` vector
+    /// Execute the provided `ins` instruction, eventually updating the `output` vector
     fn execute_instruction (&mut self, ins: Instruction, output: &mut Vec<Tribble>) {
 
         match ins {
@@ -231,23 +231,17 @@ impl Computer {
 /// program, search for the next *tribble* that would result in 'n+1' matching digits.
 /// This function tests the 8 possible *tribble* values, except if `tribble_start` is > 0. This
 /// parameter can be used when backtracking to restart after the last known good *tribble*.
-/// `matching_output_idx` is relative to the whole computer program and indicates the digit
-/// we try to match.
+/// Parameter `step` indicates which program digit we try to match, starting from the end.
 ///
 /// ## Example
-/// If the program is [40, 41, 42, 43, 44, 45], calling this function with `matching_output_idx=2`
+/// If the program is [40, 41, 42, 43, 44, 45], calling this function with `step=3`
 /// means that the Reg A value can already generate the output [43, 44, 45] and that we try
 /// to find the next *tribble* that would enable to output [42, 43, 44, 45]
 ///
 /// ## Result
 /// * In case of success: The `computer` Reg A value is updated and the function returns true
 /// * In case of failure: The `computer` Reg A value is left unchanged and the function returns false
-fn compute_next_tribble (computer: &mut Computer, matching_output_idx: usize, tribble_start: Tribble) -> bool {
-
-    // The search procedure works right to left. If the program is [1, 2, 3, 4, 5] and if
-    // we check the digit at position 3, the generated output must have a length
-    // of 2 minimum (e.g [4, 5])
-    let expected_output_len = computer.program.len () - matching_output_idx;
+fn compute_next_tribble (computer: &mut Computer, step: usize, tribble_start: Tribble) -> bool {
 
     // Make room from the next tribble to find
     let base = computer.a << 3;
@@ -258,11 +252,11 @@ fn compute_next_tribble (computer: &mut Computer, matching_output_idx: usize, tr
 
         // Get the resulting output. Check we have enough digits
         let Some(output) = computer.execute().ok () else { return false };
-        if output.len() < expected_output_len { continue };
+        if output.len() <= step { continue };
 
-        // Extract the digit to check from the digit. If it matches the program digit
-        let Some(value) = output.get (output.len () - expected_output_len) else { continue };
-        if *value == computer.program [matching_output_idx] {
+        // Extract the digit to check from the output and from the program to compare them.
+        let Some(value) = output.get (output.len () -step -1) else { continue };
+        if *value == computer.program [computer.program.len () -step -1] {
             computer.a = base | tribble as Register;
             return true
         }
@@ -274,31 +268,31 @@ fn compute_next_tribble (computer: &mut Computer, matching_output_idx: usize, tr
 }
 
 /// Backtracking when it was not possible to find a *tribble* that would result in an output
-/// matching the last digits of the program content (from the index `matching_output_idx`)
+/// matching the last digits of the program content (parameter `step`)
 /// In that case, we test the other possibilities for the last *tribble* of the Reg A value.
 /// If all the possibilities are exhausted, then we make a step backward by discarding
 /// the last *tribble* and by incrementing the one before; and so forth.
 ///
 /// This function stops when the backtracking is successful in finding an updated *tribble* value.
-/// In that case it returns the new value of the parameter `matching_output_idx` to consider.
+/// In that case it returns the new value of the parameter `step` to consider.
 ///
-/// If all the possible tribbles have been exhausted, the function returns None
-fn backtrack (computer: &mut Computer, mut matching_output_idx: usize) -> Option<usize> {
+/// If all the possible *tribbles* have been exhausted, the function returns None
+fn backtrack (computer: &mut Computer, mut step: usize) -> Option<usize> {
 
     // Backtracking loop
-    while matching_output_idx < computer.program.len () -1 {
+    while step > 0  {
 
         // make a step backward
-        matching_output_idx += 1;
+        step -= 1;
 
         // Take the last tribble used, then remove it
         let last_tribble = (computer.a & 0b111) as Tribble;
         computer.a >>= 3;
 
-        // Try computing another tribble that would give the same result for the current 'matching_output_idx'
-        // If successful, return the new 'matching_output_idx' to consider
-        if compute_next_tribble (computer, matching_output_idx, last_tribble+1) {
-            return Some (matching_output_idx -1);
+        // Try computing another tribble that would give the same result for the current 'step'
+        // If successful, return the new 'step' value to consider
+        if compute_next_tribble (computer, step, last_tribble+1) {
+            return Some (step +1);
         }
     }
 
@@ -329,21 +323,18 @@ fn backtrack (computer: &mut Computer, mut matching_output_idx: usize) -> Option
 fn compute_reg_a(content: &[&str]) -> Result<Register> {
 
     let mut computer = Computer::new(content)?;
-    let mut matching_output_idx = computer.program.len() - 1;
+    let mut step = 0;
     computer.a = 0;
 
     loop {
-        match compute_next_tribble(&mut computer, matching_output_idx, 0) {
+        match compute_next_tribble(&mut computer, step, 0) {
             true => {
-                if matching_output_idx > 0 {
-                    matching_output_idx -= 1;
-                } else {
-                    break Ok(computer.a)
-                }
+                if step < computer.program.len () -1 { step +=1 }
+                else { break Ok(computer.a) }
             },
             false => {
-                if let Some (idx) = backtrack(&mut computer, matching_output_idx) {
-                    matching_output_idx = idx;
+                if let Some (new_step) = backtrack(&mut computer, step) {
+                    step = new_step;
                 }
                 else { bail!("Could not compute register A")}
             },
