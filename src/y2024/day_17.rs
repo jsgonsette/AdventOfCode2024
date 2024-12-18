@@ -126,10 +126,10 @@ impl Computer {
         })
     }
 
-    /// Executes the internal program and delivers the output vector
+    /// Executes the internal program and delivers the final output vector
     fn execute (&mut self) -> Result<Vec<Tribble>> {
 
-        let mut output: Vec<Tribble> = vec![];
+        let mut outputs: Vec<Tribble> = vec![];
 
         loop {
             // Get the next instruction code and operand code.
@@ -142,10 +142,27 @@ impl Computer {
             let ins = Instruction::from_pair(ins, op);
 
             // And execute it
-            self.execute_instruction(ins, &mut output);
+            let output = self.execute_instruction(ins);
+            if let Some (value) = output { outputs.push(value); }
         }
 
-        Ok(output)
+        Ok(outputs)
+    }
+
+    /// Execute multiple steps until a first *Tribble* is delivered on the output,
+    /// or until the program ends.
+    fn output_step (&mut self) -> Option<Tribble> {
+        while let Some (&ins) = self.program.get(self.sp)  {
+
+            let &op = self.program.get(self.sp + 1)?;
+            let ins = Instruction::from_pair(ins, op);
+            self.sp += 2;
+
+            let output = self.execute_instruction(ins);
+            if output.is_some() { return output }
+        }
+
+        None
     }
 
     /// Print a human-readable version of the program
@@ -164,8 +181,8 @@ impl Computer {
         program
     }
 
-    /// Execute the provided `ins` instruction, eventually updating the `output` vector
-    fn execute_instruction (&mut self, ins: Instruction, output: &mut Vec<Tribble>) {
+    /// Execute the provided `ins` instruction, eventually outputting a number
+    fn execute_instruction (&mut self, ins: Instruction) -> Option<Tribble> {
 
         match ins {
             Instruction::Adv(op) => {
@@ -192,7 +209,7 @@ impl Computer {
 
             Instruction::Out(op) => {
                 let op_val = self.combo_to_value(op);
-                output.push((op_val & 0b111) as Tribble);
+                return Some ((op_val & 0b111) as Tribble)
             },
 
             Instruction::Bdv(op) => {
@@ -205,6 +222,8 @@ impl Computer {
                 self.c = self.a / (2u32.pow(op_val as u32) as usize);
             },
         }
+
+        None
     }
 
     /// Transform a combo operand into a value
@@ -248,15 +267,13 @@ fn compute_next_tribble (computer: &mut Computer, step: usize, tribble_start: Tr
 
     // Test the different possible tribbles we could add to register A
     for tribble in tribble_start..8 {
+
+        // Execute the program until the first output is delivered
         computer.reset_with_reg_a (base | tribble as Register);
+        let Some (first_output) = computer.output_step() else { continue };
 
-        // Get the resulting output. Check we have enough digits
-        let Some(output) = computer.execute().ok () else { return false };
-        if output.len() <= step { continue };
-
-        // Extract the digit to check from the output and from the program to compare them.
-        let Some(value) = output.get (output.len () -step -1) else { continue };
-        if *value == computer.program [computer.program.len () -step -1] {
+        // and compare it with the program
+        if first_output == computer.program [computer.program.len () -step -1] {
             computer.a = base | tribble as Register;
             return true
         }
