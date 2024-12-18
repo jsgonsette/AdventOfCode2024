@@ -34,10 +34,14 @@ enum Operation {
     Div (MonkeyName, MonkeyName),
 }
 
+/// To localize in which subtree is the Human at each node
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum HumanSide { Left, Right, NA }
 
 type MonkeyName = [char; 4];
+
+/// Indexes to find back a monkey in the vector of monkeys, given its name
+type MonkeyIndex = HashMap<MonkeyName, MonkeyLocation>;
 
 /// Describes a monkey, with its name and its job
 type Monkey = (MonkeyName, Operation);
@@ -70,11 +74,13 @@ impl Operation {
     }
 }
 
+/// Save the 4-letters name of the monkey
 fn to_monkey_name (name: &str) -> MonkeyName {
     let raw = name.as_bytes();
     [raw [0] as char, raw [1] as char, raw [2] as char, raw [3] as char]
 }
 
+/// Decode a row of the puzzle file content and return the corresponding [Monkey]
 fn decode_row (row: &str) -> Result<Monkey> {
 
     let (name, operands) = row.split_once(": ").ok_or(anyhow!("Invalid row: {}", row))?;
@@ -100,11 +106,15 @@ fn decode_row (row: &str) -> Result<Monkey> {
     }
 }
 
+/// Create all the monkeys from the puzzle file content
 fn get_monkeys (content: &[&str]) -> Result<Vec<Monkey>> {
     content.iter().map(|&row| decode_row(row)).collect ()
 }
 
-fn build_monkey_index (monkeys: &[Monkey]) -> HashMap<MonkeyName, MonkeyLocation> {
+/// Given a vector of `monkeys`, create an index based on the names that enables to retrieve
+/// * the position of the monkey in the vector
+/// * the position of the parent monkey in the vector (the one waiting for the value)
+fn build_monkey_index (monkeys: &[Monkey]) -> MonkeyIndex {
     let mut index = HashMap::new();
 
     for (idx, monkey) in monkeys.iter().enumerate() {
@@ -126,6 +136,12 @@ fn build_monkey_index (monkeys: &[Monkey]) -> HashMap<MonkeyName, MonkeyLocation
         }
     }
 
+    index
+}
+
+/// Augment the provided `index` with the localization of the human at each parent node (when applicable)
+fn update_index_with_human_loc (monkeys: &[Monkey], index: &mut MonkeyIndex) {
+
     // From the human to the root, localize the human at each parent node
     let mut current = to_monkey_name("humn");
     while current != to_monkey_name("root") {
@@ -135,7 +151,8 @@ fn build_monkey_index (monkeys: &[Monkey]) -> HashMap<MonkeyName, MonkeyLocation
         let parent_name = monkeys [idx].0;
         let parent_idx = index [&parent_name].idx;
 
-        // Check its operation to see if the human operator is on its left or right side
+        // Check its operation to see if the human operator is on its left or right side,
+        // then save this information
         let parent_operation = monkeys [parent_idx].1;
         if let Some((name_left, _name_right)) = parent_operation.get_names() {
             if *name_left == current {
@@ -146,21 +163,25 @@ fn build_monkey_index (monkeys: &[Monkey]) -> HashMap<MonkeyName, MonkeyLocation
         }
         current = parent_name;
     }
-
-    index
 }
 
-fn yell_monkey(monkeys: &[Monkey], index: &HashMap<MonkeyName, MonkeyLocation>, name: MonkeyName) -> Result<usize> {
+/// Solve the value the monkey `name` will yell, given the vector of `monkeys` and the `index`
+fn yell_monkey(monkeys: &[Monkey], index: &MonkeyIndex, name: MonkeyName) -> Result<usize> {
 
+    // Get the target monkey and its operation
     let monkey_idx = index[&name].idx;
     let monkey = &monkeys[monkey_idx];
     let operation = &monkey.1;
 
+    // If operation is Yell, return the value
     if let Operation::Yell(number) = operation { return Ok (*number); }
+
+    // Otherwise get the names of the monkeys on the left and on the right, and solve them recursively
     let names = operation.get_names().unwrap();
     let val_left = yell_monkey(monkeys, index, *names.0)?;
     let val_right = yell_monkey(monkeys, index, *names.1)?;
 
+    // Combine both values given the monkey operation
     match operation {
         Operation::Add(_, _) => Ok (val_left + val_right),
         Operation::Sub(_, _) => Ok (val_left - val_right),
@@ -170,28 +191,99 @@ fn yell_monkey(monkeys: &[Monkey], index: &HashMap<MonkeyName, MonkeyLocation>, 
     }
 }
 
+/// Solve the value the human should yell to have an equality at the root monkey,
+/// given the vector of `monkeys` and the `index`.
+fn solve_human (monkeys: &[Monkey], index: &MonkeyIndex) -> Result<usize> {
 
-fn part_a (content: &[&str]) -> Result<usize> {
-    let monkeys = get_monkeys(content)?;
-    let index = build_monkey_index(&monkeys);
+    // Identify the child monkey sitting above the human, and the value it must yell
+    let (monkey_on_human_side, value_to_yell) = get_human_side(monkeys, index, to_monkey_name("root"), None)?;
 
-    let root_val = yell_monkey(&monkeys, &index, to_monkey_name("root"))?;
-    Ok(root_val)
+    // Solve the other subtree knowing this value
+    solve_human_at(monkeys, index, monkey_on_human_side, value_to_yell)
 }
 
-/// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
+/// Given a monkey `name`, identify the child monkey on the side the human belongs to.
+/// Then, return
+/// * the name of this monkey sitting above the human
+/// * the value that it should yell to match the `expected_operation_value`.
+/// If this later is `None`, we are at the root; we seek at satisfying the equality
+fn get_human_side(
+    monkeys: &[Monkey],
+    index: &MonkeyIndex,
+    name: MonkeyName,
+    expected_operation_value: Option<usize>
+) -> Result<(MonkeyName, usize)> {
 
-    Ok(0)
+    // Get the top monkey characteristics
+    let monkey_idx = index[&name];
+    let monkey = &monkeys[monkey_idx.idx];
+    let human_side = monkey_idx.human;
+
+    // Get the names of the monkeys on the left and the right
+    let operation = &monkey.1;
+    let (name_left,name_right) = operation.get_names().ok_or(anyhow!("Expecting binary op"))?;
+
+    // Identify the subtree with the human (to solve) and the other one with the known value
+    let (known, to_solve) = match human_side {
+        HumanSide::Left => (name_right, name_left),
+        HumanSide::Right => (name_left, name_right),
+        HumanSide::NA => bail!("Expecting human side"),
+    };
+
+    // Get the value we can know from the corresponding subtree
+    let value = yell_monkey(monkeys, index, *known)?;
+
+    // Knowing the result and the value at one side, solve the other side
+    let val_other_side = if let Some (expected_value) = expected_operation_value {
+        match operation {
+            Operation::Add(_, _) => expected_value - value,
+            Operation::Sub(_, _) => if human_side == HumanSide::Left { expected_value + value } else { value - expected_value },
+            Operation::Mul(_, _) => expected_value / value,
+            Operation::Div(_, _) => if human_side == HumanSide::Left { expected_value * value } else { value / expected_value },
+            _ => unreachable!(),
+        }
+    } else {
+        value
+    };
+
+    Ok ((*to_solve, val_other_side))
+}
+
+/// Solve the value the human should yell to have an equality at the root monkey,
+/// given the vector of `monkeys` and the `index`.
+/// Parameter `name` designates a monkey on top of the human, while parameter `expected_value`
+/// indicates what this monkey should yell.
+fn solve_human_at (monkeys: &[Monkey], index: &HashMap<MonkeyName, MonkeyLocation>, name: MonkeyName, expected_value: usize) -> Result<usize> {
+
+    // Identify the child monkey sitting above the human, and the value it must yell
+    let (monkey_on_human_side, value_to_yell) = get_human_side(monkeys, index, name, Some (expected_value))?;
+
+    // If we reach the human, we finally know what to yell. Otherwise, continue digging down.
+    if monkey_on_human_side == to_monkey_name("humn") { Ok (value_to_yell) }
+    else { solve_human_at(monkeys, index, monkey_on_human_side, value_to_yell) }
+}
+
+/// Solve both parts of the puzzle
+fn solve (content: &[&str]) -> Result<(usize, usize)> {
+
+    // Collect the monkeys
+    let monkeys = get_monkeys(content)?;
+
+    // Create the index
+    let mut index = build_monkey_index(&monkeys);
+    update_index_with_human_loc(&monkeys, &mut index);
+
+    // Solve both problems
+    let root_val = yell_monkey(&monkeys, &index, to_monkey_name("root"))?;
+    let human_val = solve_human(&monkeys, &index)?;
+
+    Ok((root_val, human_val))
 }
 
 pub fn day_21 (content: &[&str]) -> Result <(Solution, Solution)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 152);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(solve (&split(TEST)).unwrap_or_default() == (152, 301));
 
-    let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
-
+    let (ra, rb) = solve(content)?;
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
