@@ -170,7 +170,7 @@ impl Computer {
         match ins {
             Instruction::Adv(op) => {
                 let op_val = self.combo_to_value(op);
-                self.a = self.a / (2u32.pow(op_val as u32) as usize);
+                self.a = self.a >> op_val;
             },
 
             Instruction::Bxl(n)  => {
