@@ -34,5 +34,5 @@ Here are the results I get to solve the two parts of the problems:
 | 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)       | [day_14.rs](./src/y2024/day_14.rs) | 34.09      |
 | 15  | [Warehouse Woes](https://adventofcode.com/2024/day/15)         | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |
 | 16  | [Reindeer Maze](https://adventofcode.com/2024/day/16)          | [day_16.rs](./src/y2024/day_16.rs) | 9.332      |
-| 17  | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | [day_17.rs](./src/y2024/day_17.rs) | 0.126      |
+| 17  | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | [day_17.rs](./src/y2024/day_17.rs) | 0.078      |
 | 18  | [RAM Run](https://adventofcode.com/2024/day/18)                | [day_18.rs](./src/y2024/day_18.rs) | 36.921     |

@@ -22,7 +22,7 @@ fn part_b (_content: &[&str]) -> Result<usize> {
     Ok(0)
 }
 
-pub fn day_22 (_content: &[&str]) -> Result <(Solution, Solution)> {
+pub fn day_19 (_content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 0);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
