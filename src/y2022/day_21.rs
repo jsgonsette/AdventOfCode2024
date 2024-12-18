@@ -20,79 +20,59 @@ drzm: hmdt - zczc
 hmdt: 32
 ";
 
-/// Models an operand: either a known number, or the name of the monkey we wait for
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Operand {
-    Number (usize),
-    Name (MonkeyName),
+fn split (content: &str) -> Vec<&str> {
+    content.lines().collect()
 }
 
 /// Models the different type of operations
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Operation {
     Yell (usize),
-    Add (Operand, Operand),
-    Sub (Operand, Operand),
-    Mul (Operand, Operand),
-    Div (Operand, Operand),
+    Add (MonkeyName, MonkeyName),
+    Sub (MonkeyName, MonkeyName),
+    Mul (MonkeyName, MonkeyName),
+    Div (MonkeyName, MonkeyName),
 }
 
-type MonkeyName = String;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum HumanSide { Left, Right, NA }
+
+type MonkeyName = [char; 4];
 
 /// Describes a monkey, with its name and its job
 type Monkey = (MonkeyName, Operation);
 
-/// The index of a monkey in the vector, as well as all the other indexes where
-/// it appears in an operand
-type MonkeyLocation = (usize, Vec<usize>);
+/// Two positions (as principal and as operand) of a monkey in the vector of monkeys.
+/// Also store in which subtree is the human
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+struct MonkeyLocation {
+    idx: usize,
+    op_idx: usize,
+    human: HumanSide,
+}
 
+impl Default for HumanSide {
+    fn default () -> Self {
+        HumanSide::NA
+    }
+}
 
 impl Operation {
-
     /// Extract the left and right operands of a binary operation
-    fn get_operands (&self) -> Option<(&Operand, &Operand)> {
-       match self {
-           Operation::Add (left, right) => Some((left, right)),
-           Operation::Sub (left, right) => Some((left, right)),
-           Operation::Mul (left, right) => Some((left, right)),
-           Operation::Div (left, right) => Some((left, right)),
-           _ => None,
-       }
-    }
-
-    /// Replace the left operand of a binary operation
-    fn replace_left (&mut self, left: Operand) {
-        let new_type = match self {
-            Operation::Add (_, right) => Some (Operation::Add (left, right.clone())),
-            Operation::Sub (_, right) => Some (Operation::Sub (left, right.clone())),
-            Operation::Mul (_, right) => Some (Operation::Mul (left, right.clone())),
-            Operation::Div (_, right) => Some (Operation::Div (left, right.clone())),
+    fn get_names(&self) -> Option<(&MonkeyName, &MonkeyName)> {
+        match self {
+            Operation::Add(left, right) => Some((left, right)),
+            Operation::Sub(left, right) => Some((left, right)),
+            Operation::Mul(left, right) => Some((left, right)),
+            Operation::Div(left, right) => Some((left, right)),
             _ => None,
-        };
-
-        if let Some (new_type) = new_type {
-            *self = new_type;
-        }
-    }
-
-    /// Replace the right operand of a binary operation
-    fn replace_right (&mut self, right: Operand) {
-        let new_type = match self {
-            Operation::Add (left, _) => Some (Operation::Add (left.clone(), right)),
-            Operation::Sub (left, _) => Some (Operation::Sub (left.clone(), right)),
-            Operation::Mul (left, _) => Some (Operation::Mul (left.clone(), right)),
-            Operation::Div (left, _) => Some (Operation::Div (left.clone(), right)),
-            _ => None,
-        };
-
-        if let Some (new_type) = new_type {
-            *self = new_type;
         }
     }
 }
 
-fn split (content: &str) -> Vec<&str> {
-    content.lines().collect()
+fn to_monkey_name (name: &str) -> MonkeyName {
+    let raw = name.as_bytes();
+    [raw [0] as char, raw [1] as char, raw [2] as char, raw [3] as char]
 }
 
 fn decode_row (row: &str) -> Result<Monkey> {
@@ -100,23 +80,23 @@ fn decode_row (row: &str) -> Result<Monkey> {
     let (name, operands) = row.split_once(": ").ok_or(anyhow!("Invalid row: {}", row))?;
     if let Some (operation) = operands.chars().nth(5) {
 
-        let (left, right) = operands.split_once(operation).ok_or(anyhow!("Invalid row: {}", row))?;
-        let left = Operand::Name(left.trim().to_string());
-        let right = Operand::Name(right.trim().to_string());
+    let (left, right) = operands.split_once(operation).ok_or(anyhow!("Invalid row: {}", row))?;
+    let left = to_monkey_name (left.trim());
+    let right = to_monkey_name (right.trim());
 
-        let op = match operation {
-            '+' => Operation::Add(left, right),
-            '-' => Operation::Sub(left, right),
-            '*' => Operation::Mul(left, right),
-            '/' => Operation::Div(left, right),
-            _ => bail!("Invalid row: {}", row),
-        };
+    let op = match operation {
+        '+' => Operation::Add(left, right),
+        '-' => Operation::Sub(left, right),
+        '*' => Operation::Mul(left, right),
+        '/' => Operation::Div(left, right),
+        _ => bail!("Invalid row: {}", row),
+    };
 
-        Ok((name.to_string(), op))
+    Ok((to_monkey_name(name), op))
 
     } else {
         let value = operands.trim().parse::<usize>()?;
-        Ok ((name.to_string(), Operation::Yell(value)))
+        Ok ((to_monkey_name (name), Operation::Yell(value)))
     }
 }
 
@@ -124,120 +104,80 @@ fn get_monkeys (content: &[&str]) -> Result<Vec<Monkey>> {
     content.iter().map(|&row| decode_row(row)).collect ()
 }
 
-fn get_monkeys_indexes (monkeys: &[Monkey]) -> Result<HashMap<MonkeyName, MonkeyLocation>> {
+fn build_monkey_index (monkeys: &[Monkey]) -> HashMap<MonkeyName, MonkeyLocation> {
+    let mut index = HashMap::new();
 
-    // Map the monkey names with their index in the `monkeys` vector
-    let monkey_it = monkeys.iter()
-        .enumerate ()
-        .map(
-            |(idx, (name, _))| (name.clone(), (idx, vec![]))
-        );
+    for (idx, monkey) in monkeys.iter().enumerate() {
 
-    // and build the first part of the index
-    let mut indexes: HashMap<MonkeyName, MonkeyLocation> = HashMap::from_iter(monkey_it);
+        let name = monkey.0;
+        let entry = index.entry(name).or_insert(MonkeyLocation::default());
+        entry.idx = idx;
 
-    // Now index the names in the operands they appear in
-    for (idx, (_name, op)) in monkeys.iter ().enumerate () {
+        let operation = &monkey.1;
+        match operation.get_names() {
+            None => {}
+            Some((name_left, name_right)) => {
+                let entry_left = index.entry(*name_left).or_insert(MonkeyLocation::default());
+                entry_left.op_idx = idx;
 
-        // Extract the monkey names in the operands
-        let names = match op {
-            Operation::Add(Operand::Name(left), Operand::Name(right)) => Some ((left, right)),
-            Operation::Sub(Operand::Name(left), Operand::Name(right)) => Some ((left, right)),
-            Operation::Mul(Operand::Name(left), Operand::Name(right)) => Some ((left, right)),
-            Operation::Div(Operand::Name(left), Operand::Name(right)) => Some ((left, right)),
-            _ => None,
-        };
-
-        // Record that monkey left and right both appear in the operation of the `idx`th monkey
-        if let Some ((left, right)) = names {
-
-            indexes.get_mut(left).ok_or(anyhow!("Invalid monkey name: {}", left))?.1.push(idx);
-            indexes.get_mut(right).ok_or(anyhow!("Invalid monkey name: {}", right))?.1.push(idx);
-        }
-    }
-
-    Ok(indexes)
-}
-
-fn update_operation (op: &mut Operation, monkey_name: &str, yell: usize) -> Option<usize>  {
-
-    // Replace the left operand if the name matches
-    if let Some ((left, _)) = op.get_operands () {
-        if let Operand::Name (name) = left {
-            if name == monkey_name {
-                op.replace_left (Operand::Number (yell));
+                let entry_right = index.entry(*name_right).or_insert(MonkeyLocation::default());
+                entry_right.op_idx = idx;
             }
         }
     }
 
-    // Replace the right operand if the name matches
-    if let Some ((_, right)) = op.get_operands () {
-        if let Operand::Name (name) = right {
-            if name == monkey_name {
-                op.replace_right (Operand::Number (yell));
+    // From the human to the root, localize the human at each parent node
+    let mut current = to_monkey_name("humn");
+    while current != to_monkey_name("root") {
+
+        // Retrieve the parent of the current element
+        let idx = index [&current].op_idx;
+        let parent_name = monkeys [idx].0;
+        let parent_idx = index [&parent_name].idx;
+
+        // Check its operation to see if the human operator is on its left or right side
+        let parent_operation = monkeys [parent_idx].1;
+        if let Some((name_left, _name_right)) = parent_operation.get_names() {
+            if *name_left == current {
+                index.get_mut(&parent_name).unwrap().human = HumanSide::Left;
+            } else {
+                index.get_mut(&parent_name).unwrap().human = HumanSide::Right;
             }
         }
+        current = parent_name;
     }
 
-    // If both operands are yelling monkeys, compute the result
-    let maybe_yell = match op {
-        Operation::Add(Operand::Number (yell_left), Operand::Number (yell_right)) => Some (*yell_left + *yell_right),
-        Operation::Sub(Operand::Number (yell_left), Operand::Number (yell_right)) => Some (*yell_left - *yell_right),
-        Operation::Div(Operand::Number (yell_left), Operand::Number (yell_right)) => Some (*yell_left / *yell_right),
-        Operation::Mul(Operand::Number (yell_left), Operand::Number (yell_right)) => Some (*yell_left * *yell_right),
-        _ => None,
-    };
-
-    // Make the corresponding monkey yell the result
-    if let Some (yell) = maybe_yell {
-        *op = Operation::Yell (yell);
-    }
-
-    maybe_yell
+    index
 }
 
-fn get_processing_queue (monkeys: &[Monkey]) -> Vec<(usize, usize)> {
+fn yell_monkey(monkeys: &[Monkey], index: &HashMap<MonkeyName, MonkeyLocation>, name: MonkeyName) -> Result<usize> {
 
-    let mut queue: Vec<(usize, usize)> = vec![];
-    for (idx, (_name, op)) in monkeys.iter ().enumerate () {
-        if let Operation::Yell(number) = op {
-            queue.push((idx, *number));
-        }
+    let monkey_idx = index[&name].idx;
+    let monkey = &monkeys[monkey_idx];
+    let operation = &monkey.1;
+
+    if let Operation::Yell(number) = operation { return Ok (*number); }
+    let names = operation.get_names().unwrap();
+    let val_left = yell_monkey(monkeys, index, *names.0)?;
+    let val_right = yell_monkey(monkeys, index, *names.1)?;
+
+    match operation {
+        Operation::Add(_, _) => Ok (val_left + val_right),
+        Operation::Sub(_, _) => Ok (val_left - val_right),
+        Operation::Mul(_, _) => Ok (val_left * val_right),
+        Operation::Div(_, _) => Ok (val_left / val_right),
+        _ => unreachable!(),
     }
-
-    queue
 }
 
-/// Solve first part of the puzzle
+
 fn part_a (content: &[&str]) -> Result<usize> {
+    let monkeys = get_monkeys(content)?;
+    let index = build_monkey_index(&monkeys);
 
-    let mut monkeys = get_monkeys(content)?;
-    let indexes = get_monkeys_indexes(&monkeys)?;
-
-    let mut queue = get_processing_queue(&monkeys);
-    while let Some ((idx, number)) = queue.pop() {
-
-        // Yelling monkey (name and indexes where he is involved)
-        let name = &monkeys[idx].0.clone();
-        for &other_idx in indexes[name].1.iter () {
-
-            let op = &mut monkeys[other_idx].1;
-            let maybe_yell = update_operation(op, &name, number);
-            if let Some (yell) = maybe_yell {
-                queue.push((other_idx, yell));
-            }
-        }
-    }
-
-    let root_index = indexes ["root"].0;
-    if let Operation::Yell(number) = monkeys[root_index].1 {
-        Ok(number)
-    }
-    else {
-        bail!("Invalid root operation: {:?}", monkeys[root_index].1);
-    }
+    let root_val = yell_monkey(&monkeys, &index, to_monkey_name("root"))?;
+    Ok(root_val)
 }
-
 
 /// Solve second part of the puzzle
 fn part_b (_content: &[&str]) -> Result<usize> {
