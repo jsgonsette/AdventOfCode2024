@@ -31,10 +31,10 @@ const TEST: &str = "\
 1,6
 2,0";
 
-/// A tile of the memory space
+/// A tile of the memory space. When corrupted, we record at which time.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum MemoryTile {
-    Safe, Corrupted,
+    Safe, Corrupted(u32),
 }
 
 /// Models the memory corrupted maze
@@ -84,7 +84,7 @@ impl Cell for MemoryTile {
     fn to_char(&self) -> char {
         match self {
             MemoryTile::Safe => '.',
-            MemoryTile::Corrupted => '#',
+            MemoryTile::Corrupted(_) => '#',
         }
     }
 }
@@ -100,23 +100,25 @@ impl MemorySpace {
 
     /// Fill the maze with `num_corruptions` corrupted tiles, according to the puzzle
     /// file `content`
-    fn fill_space (&mut self, content: &[&str], num_corruptions: usize) -> Result<()> {
+    fn fill_space (&mut self, content: &[&str]) -> Result<()> {
 
         let mut reader = RowReader::new(false);
 
-        for &row in content.iter().take(num_corruptions) {
+        for (idx, &row) in content.iter().enumerate() {
             let location: [usize; 2] = reader.process_row_fix(row)
                 .ok_or(anyhow!("Invalid row: {}", row))?;
 
             let coo: Coo = (location[0], location[1]).into();
-            *self.area.sample_mut(coo) = MemoryTile::Corrupted;
+            *self.area.sample_mut(coo) = MemoryTile::Corrupted (1 + idx as u32);
         }
 
         Ok(())
     }
 
     /// Do a Dijkstra search to compute the number of steps required to reach the exit tile.
-    fn compute_num_steps_to_exit (&self) -> Option<usize> {
+    /// The parameter `num_corruptions` activates this first equivalent amount of blocks, other
+    /// are ignored.
+    fn compute_num_steps_to_exit (&self, num_corruptions: u32) -> Option<usize> {
 
         let mut visited = vec![vec![false; self.area.height()]; self.area.width()];
         let exit: Coo = (self.area.width()-1, self.area.height()-1).into();
@@ -136,7 +138,9 @@ impl MemorySpace {
 
                 if let Some(tile) = self.area.try_sample(next_coo) {
 
-                    if *tile == MemoryTile::Corrupted { continue; }
+                    if let MemoryTile::Corrupted(time) = *tile {
+                        if time <= num_corruptions { continue; }
+                    }
                     if visited[nx][ny] { continue; }
 
                     visited[nx][ny] = true;
@@ -150,25 +154,27 @@ impl MemorySpace {
     }
 }
 
-/// Solve first part of the puzzle
+/// Solve first part of the puzzle, with a memory space of size `width` x `height`.
+/// Parameter `num_corruptions` activates this amount of corrupted blocks
 fn part_a (content: &[&str], width: usize, height: usize, num_corruptions: usize) -> Result<usize> {
 
     let mut space = MemorySpace::new(width, height);
-    space.fill_space(content, num_corruptions)?;
-    let num_steps = space.compute_num_steps_to_exit().ok_or(anyhow!("No path found"))?;
+    space.fill_space(content)?;
+    let num_steps = space.compute_num_steps_to_exit(num_corruptions as u32).ok_or(anyhow!("No path found"))?;
 
     Ok(num_steps)
 }
 
-/// Solve second part of the puzzle
+/// Solve second part of the puzzle, with a memory space of size `width` x `height`.
+/// Parameter `num_corruptions_start` set a low bound for which we know a path exists.
 fn part_b (content: &[&str], width: usize, height: usize, num_corruptions_start: usize) -> Result<String> {
 
-    // Check if the maze with `num_corruptions` has a solution
-    let has_path = |num_corruptions: &usize| {
-        let mut space = MemorySpace::new(width, height);
-        space.fill_space(content, *num_corruptions).unwrap();
+    let mut space = MemorySpace::new(width, height);
+    space.fill_space(content)?;
 
-        space.compute_num_steps_to_exit().is_some()
+    // Check if the maze with `num_corruptions` blocks has a solution
+    let has_path = |num_corruptions: &usize| {
+        space.compute_num_steps_to_exit(*num_corruptions as u32).is_some()
     };
 
     // Binary search over the possible range
