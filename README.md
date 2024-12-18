@@ -35,3 +35,4 @@ Here are the results I get to solve the two parts of the problems:
 | 15  | [Lanternfish](https://adventofcode.com/2024/day/15)            | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |
 | 16  | [Reindeer Maze](https://adventofcode.com/2024/day/16)          | [day_16.rs](./src/y2024/day_16.rs) | 9.332      |
 | 17  | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | [day_17.rs](./src/y2024/day_17.rs) | 5.806      |
+| 18  | [RAM Run](https://adventofcode.com/2024/day/18)                | [day_18.rs](./src/y2024/day_18.rs) | 36.921     |

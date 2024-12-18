@@ -49,9 +49,10 @@ fn main() -> Result<()> {
 
     solve_year(Y2022, 21..22);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 17..19);
+    solve_year(Y2024, 19..20);
 
-    //benchmark_year(&Y2024);
+    let result = benchmark_year(&Y2024);
+    dbg!(&result);
 
     Ok(())
 }

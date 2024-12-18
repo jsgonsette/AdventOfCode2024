@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-/// The four possible displacements
+/// The four possible displacements (up, down, left and right)
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Direction {
     Up, Down, Left, Right,
