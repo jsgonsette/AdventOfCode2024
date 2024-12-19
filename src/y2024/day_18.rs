@@ -115,6 +115,20 @@ impl MemorySpace {
         Ok(())
     }
 
+    fn get_corruption_it<'a> (content: &'a[&'a str]) -> impl Iterator<Item=Result<Coo>> +'a {
+
+        let mut reader = RowReader::new(false);
+
+        // Iterate on the rows
+        content.iter().map (move |&row| {
+
+            // Read the two values and convert them into a coordinate
+            let location: [usize; 2] = reader.process_row_fix(row)
+                .ok_or(anyhow!("Invalid row: {}", row))?;
+            Ok((location[0], location[1]).into())
+        })
+    }
+
     /// Do a Dijkstra search to compute the number of steps required to reach the exit tile.
     /// The parameter `num_corruptions` activates this first equivalent amount of blocks, other
     /// are ignored.
@@ -188,6 +202,14 @@ fn part_b (content: &[&str], width: usize, height: usize, num_corruptions_start:
 
     let loc_string = format!("{},{}", loc[0], loc[1]);
     Ok(loc_string)
+}
+
+fn part_b2 (content: &[&str], width: usize, height: usize) -> Result<String> {
+
+    let mut space = MemorySpace::new(width, height);
+    space.fill_space(content)?;
+
+    Ok("".to_string())
 }
 
 pub fn day_18 (content: &[&str]) -> Result <(Solution, Solution)> {
