@@ -141,8 +141,8 @@ fn part_b (content: &[&str]) -> Result<usize> {
 
 pub fn day_19 (content: &[&str]) -> Result <(Solution, Solution)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 0);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 6);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 16);
 
     let ra = part_a(content)?;
     let rb = part_b(content)?;

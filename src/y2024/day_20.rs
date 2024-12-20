@@ -22,7 +22,8 @@ const TEST: &str = "\
 #...#...#...###
 ###############";
 
-/// Models the different possible tiles in the [Maze]
+/// Models the different possible tiles in the [Maze],
+/// along with the time needed to reach them
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum MazeTile {
     Empty(u32),
@@ -166,9 +167,9 @@ impl Maze {
             let coo: Coo = (x, y).into();
             let Some (start_time) = tile.track_time() else { unreachable!(); };
 
-            // Check all the adjacent non-wall coordinates that are reachable under x ps.
+            // Check all the adjacent non-wall coordinates that are reachable under `rule` pico-sec.
             // For each of them, give their normal arrival time and their distance from `coo`
-            let end_times: Vec<(u32, u32)> = coo.iter_adjacent_manhattan(rule).filter_map(
+            let end_times = coo.iter_adjacent_manhattan(rule).filter_map(
                 |next_coo| match self.tiles.try_sample(next_coo) {
                     Some(tile) => {
                         let distance = next_coo.manhattan_distance(&coo);
@@ -177,7 +178,7 @@ impl Maze {
                     },
                     _ => None,
                 }
-            ).collect();
+            );
 
             // Iterate on all the ending tile
             for (end_time, end_distance) in end_times {
