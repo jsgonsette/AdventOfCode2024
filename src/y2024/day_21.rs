@@ -1,5 +1,5 @@
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Solution};
 
 const TEST: &str = "\
 ";
