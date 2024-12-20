@@ -65,6 +65,7 @@ impl Coo {
         }
     }
 
+    /// Return the Manhattan distance with `other` coordinate
     pub fn manhattan_distance (&self, other: &Coo) -> u32 {
         (self.x - other.x).abs() as u32 + (self.y - other.y).abs() as u32
     }
@@ -85,6 +86,9 @@ impl Coo {
         Direction::iter().map(|dir| self.next(dir))
     }
 
+    /// Iterate on all the adjacent tiles that are up to a `limit` Manhattan distance.
+    /// Calling this function with a limit of 1 is equivalent
+    /// to the function [iter_adjacent_4](Self::iter_adjacent_4)
     pub fn iter_adjacent_manhattan (&self, limit: u32) -> impl Iterator<Item = Coo> + '_ {
 
         let x_it = self.x - limit as isize..=self.x + limit as isize;

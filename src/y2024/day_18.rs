@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap};
 use anyhow::*;
 use crate::{Cell, CellArea, Solution};
 use crate::tools::{Coo, Direction, RowReader};
@@ -30,6 +30,9 @@ const TEST: &str = "\
 0,5
 1,6
 2,0";
+
+/// Diffusion set for the alternate method of part 2 (same size of the memory space area)
+type DiffuseSet = Vec<Vec<bool>>;
 
 /// A tile of the memory space. When corrupted, we record at which time.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -115,7 +118,8 @@ impl MemorySpace {
         Ok(())
     }
 
-    fn get_corruption_it<'a> (content: &'a[&'a str]) -> impl Iterator<Item=Result<Coo>> +'a {
+    /// Return an iterator on the corruption coordinates, in the order they appear.
+    fn get_corruption_it<'a> (content: &'a[&'a str]) -> impl DoubleEndedIterator<Item=Result<Coo>> +'a {
 
         let mut reader = RowReader::new(false);
 
@@ -129,16 +133,26 @@ impl MemorySpace {
         })
     }
 
+    /// Memory space entry
+    fn entry (&self) -> Coo {
+        (0usize, 0usize).into()
+    }
+
+    /// Memory space exit
+    fn exit (&self) -> Coo {
+        (self.area.width()-1, self.area.height()-1).into()
+    }
+
     /// Do a Dijkstra search to compute the number of steps required to reach the exit tile.
     /// The parameter `num_corruptions` activates this first equivalent amount of blocks, other
     /// are ignored.
     fn compute_num_steps_to_exit (&self, num_corruptions: u32) -> Option<usize> {
 
         let mut visited = vec![vec![false; self.area.height()]; self.area.width()];
-        let exit: Coo = (self.area.width()-1, self.area.height()-1).into();
+        let exit = self.exit();
 
         let mut pq = PriorityQueue::new ();
-        let start = Explore { coo: Coo { x: 0, y: 0 }, score: 0 };
+        let start = Explore { coo: self.entry(), score: 0 };
         pq.push (start);
 
         while let Some (Explore { coo, score }) = pq.pop() {
@@ -166,7 +180,90 @@ impl MemorySpace {
 
         None
     }
+
+    /// Extend a `set` of empty cells from the provided `coo`
+    fn diffuse_from (&self, coo: Coo, set: &mut DiffuseSet) {
+
+        // Init the queue with the initial coordinate
+        let mut queue = Vec::<Coo>::new ();
+        queue.push (coo);
+        set [coo.x as usize][coo.y as usize] = true;
+
+        while let Some (coo) = queue.pop() {
+
+            // For each coordinate, check the 4 neighbors
+            for dir in Direction::iter() {
+                let next_coo = coo.next(dir);
+                let x = next_coo.x as usize;
+                let y = next_coo.y as usize;
+
+                // If safe and if not in the set, add it and pursue the diffusion
+                match self.area.try_sample(next_coo) {
+                    Some(MemoryTile::Safe) if !set [x][y] => {
+                        set [x][y] = true;
+                        queue.push (next_coo);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
 }
+
+/// Find the cutting block of part 2 with an alternate method. Here we expand two areas of
+/// empty cells from the start and the end. Then we remove the block one by one and check
+/// when both areas meet.
+fn find_cutting_block (content: &[&str], space: &mut MemorySpace) -> Result<Coo> {
+
+    // Build the diffusion sets from the start and the exit
+    let mut start_set = vec![vec![false; space.area.height()]; space.area.width()];
+    let mut end_set = vec![vec![false; space.area.height()]; space.area.width()];
+    space.diffuse_from(space.entry(), &mut start_set);
+    space.diffuse_from(space.exit(), &mut end_set);
+
+    // Iterate on the blocks in reverse
+    for coo in MemorySpace::get_corruption_it(content).rev() {
+
+        // Remove the block
+        let coo: Coo = coo?;
+        *space.area.sample_mut(coo) = MemoryTile::Safe;
+
+        // Check the tiles adjacent to the removed block to determine if they touch the diffusion areas
+        let touching_it = coo.iter_adjacent_4().map (|next_coo| {
+            if space.area.is_inside(next_coo) {
+                let (nx, ny) = (next_coo.x as usize, next_coo.y as usize);
+
+                let touch_start = start_set[nx][ny];
+                let touch_end = end_set[nx][ny];
+                (touch_start, touch_end)
+            }
+            else { (false, false) }
+        });
+
+        let (touch_start, touch_end) = touching_it.fold (
+            (false, false),
+            |(any_start, any_end), (start, end)| {
+                (any_start || start, any_end || end)
+            }
+        );
+
+        // Check the result
+        match (touch_start, touch_end) {
+
+            // If the block touches both sets, we are done.
+            (true, true) => { return Ok(coo); }
+
+            // Otherwise, we extend the diffusion areas.
+            (true, _) => { space.diffuse_from(coo, &mut start_set); },
+            (_, true) => { space.diffuse_from(coo, &mut end_set); },
+            _         => {},
+        }
+    }
+
+    Err(anyhow!("Cutting block Not found"))
+}
+
 
 /// Solve first part of the puzzle, with a memory space of size `width` x `height`.
 /// Parameter `num_corruptions` activates this amount of corrupted blocks
@@ -204,17 +301,26 @@ fn part_b (content: &[&str], width: usize, height: usize, num_corruptions_start:
     Ok(loc_string)
 }
 
-fn part_b2 (content: &[&str], width: usize, height: usize) -> Result<String> {
+/// Solve second part of the puzzle, with a memory space of size `width` x `height`.
+/// Use an alternative method based on diffusion areas extended from both the entry and the exit
+fn part_b_alt(content: &[&str], width: usize, height: usize) -> Result<String> {
 
+    // Instantiate the memory space with all the blocks
     let mut space = MemorySpace::new(width, height);
     space.fill_space(content)?;
 
-    Ok("".to_string())
+    // Find the cutting block
+    let cutting_block = find_cutting_block(content, &mut space)?;
+
+    let loc_string = format!("{},{}", cutting_block.x, cutting_block.y);
+    Ok(loc_string)
 }
 
 pub fn day_18 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST), 7, 7, 12).unwrap_or_default() == 22);
+    debug_assert!(part_b (&split(TEST), 7, 7, 12).unwrap_or_default() == "6,1");
+    debug_assert!(part_b_alt(&split(TEST), 7, 7).unwrap_or_default() == "6,1");
 
     let ra = part_a(content, 71, 71, 1024)?;
     let rb = part_b(content, 71, 71, 1024)?;

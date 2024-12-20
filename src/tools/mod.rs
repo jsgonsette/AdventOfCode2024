@@ -255,6 +255,12 @@ impl<T: Cell> CellArea<T> {
     /// Return the area
     pub fn area (&self) -> usize { self.width * self.height }
 
+    /// Return true if the coordinate is inside the area
+    pub fn is_inside (&self, coo:impl Into<Coo>) -> bool {
+        let coo = coo.into();
+        coo.x >= 0 && coo.x < self.width as isize && coo.y >= 0 && coo.y < self.height as isize
+    }
+
     pub fn wrap_coo (&self, coo: (isize, isize)) -> (isize, isize) {
 
         let w = self.width as isize;
