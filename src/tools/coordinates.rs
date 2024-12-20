@@ -65,7 +65,11 @@ impl Coo {
         }
     }
 
-    /// Iterate on the 8 adjacent coordinates
+    pub fn manhattan_distance (&self, other: &Coo) -> u32 {
+        (self.x - other.x).abs() as u32 + (self.y - other.y).abs() as u32
+    }
+
+    /// Iterate on the 8 adjacent coordinates (up, down, left, right + 4 diagonals)
     pub fn iter_adjacent_8 (&self) -> impl Iterator<Item = Coo> + '_ {
 
         let x_it = self.x - 1..=self.x + 1;
@@ -73,6 +77,24 @@ impl Coo {
 
         x_it.cartesian_product(y_it)
             .filter(|(x, y)| *x != self.x || *y != self.y)
+            .map(|(x, y)| Coo { x, y })
+    }
+
+    /// Iterate on the 4 adjacent coordinates (up, down, left, right)
+    pub fn iter_adjacent_4 (&self) -> impl Iterator<Item = Coo> + '_ {
+        Direction::iter().map(|dir| self.next(dir))
+    }
+
+    pub fn iter_adjacent_manhattan (&self, limit: u32) -> impl Iterator<Item = Coo> + '_ {
+
+        let x_it = self.x - limit as isize..=self.x + limit as isize;
+        let y_it = self.y - limit as isize..=self.y + limit as isize;
+
+        x_it.cartesian_product(y_it)
+            .filter(move |(x, y)| {
+                let distance = (x - self.x).abs () + (y - self.y).abs ();
+                distance > 0 && distance <= limit as isize
+            })
             .map(|(x, y)| Coo { x, y })
     }
 
