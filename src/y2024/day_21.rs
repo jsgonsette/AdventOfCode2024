@@ -248,7 +248,7 @@ fn load_codes (content: &[&str]) -> Result<Vec<Code>> {
     }).collect()
 }
 
-/// Given a `current_pos` and a `sequence` of entries, return an iterator
+/// Given a `current_pos` and a `sequence` of entries on a keypad, return an iterator
 /// over the different movement to execute.
 /// ## Example
 /// ```
@@ -263,18 +263,18 @@ fn sequence_to_movements<'a> (current_pos: DirectionalEntry, sequence: &'a [Dire
 
 /// Compute the length of the shortest sequence that enables to make a single `movement` on the
 /// numerical keypad through a chain of `depth` robots.
-fn compute_move_length_through_robot_chain(memo: &mut Memo, movement: StartDest, robots: &mut[DirectionalKeypad]) -> usize {
+fn compute_move_length_through_robot_chain(memo: &mut Memo, movement: StartDest, depth: usize) -> usize {
 
     // No robot to consider, we can do the movement ourselves in one step
-    if robots.len() == 0 { return 1; }
+    if depth == 0 { return 1; }
 
     // Consult the table and return the value if we know it
-    let memo_key = (movement, robots.len());
+    let memo_key = (movement, depth);
     if let Some (length) = memo.get(&memo_key) { return *length; }
 
     // Otherwise, consider the first robot from the chain and get the different
     // sequences that would enable to execute the movement
-    let mut robot = robots [0];
+    let mut robot = DirectionalKeypad::new();
     robot.pos = movement.0;
     let sequences = robot.get_sequences_to(movement.1);
 
@@ -284,7 +284,7 @@ fn compute_move_length_through_robot_chain(memo: &mut Memo, movement: StartDest,
         // The current sequence is split into a succession of movements.
         // We recurse on each of them and sum up everything
         sequence_to_movements(DirectionalEntry::Activate, seq).map (|movement| {
-            compute_move_length_through_robot_chain(memo, movement, &mut robots[1..])
+            compute_move_length_through_robot_chain(memo, movement, depth-1)
         }).sum ()
 
     }).min().unwrap();
@@ -303,14 +303,13 @@ fn compute_move_length_through_robot_chain(memo: &mut Memo, movement: StartDest,
 fn compute_min_sequence_length(memo: &mut Memo, code: Code, depth: usize) -> usize {
 
     let mut num_key = NumericalKeypad::new();
-    let mut robots_dir_key = [DirectionalKeypad::new(); 25];
 
     // Set up the sequence of buttons to press on the numerical keypad to enter the code
     let digit_seq = code.digits.iter()
         .map(|&d| {NumericalEntry::Digit (d)})
         .chain(iter::once(NumericalEntry::Activate));
 
-    // Sum length required for each digit
+    // Sum the length required for each digit
     let mut total_length = 0;
     digit_seq.for_each(|entry| {
 
@@ -319,10 +318,10 @@ fn compute_min_sequence_length(memo: &mut Memo, code: Code, depth: usize) -> usi
         let sequences = num_key.get_sequences_to(entry);
         let min_length: usize = sequences.iter ().map (|seq| {
 
-            // For each sequence, we decompose into a succession of moves. The number of operations
-            // is the sum of all the moves needed.
+            // For each sequence, we decompose into a succession of moves. We sum
+            // the length of the best sequence for each move
             sequence_to_movements(DirectionalEntry::Activate, seq).map (|movement| {
-                compute_move_length_through_robot_chain(memo, movement, &mut robots_dir_key)
+                compute_move_length_through_robot_chain(memo, movement, depth)
             }).sum ()
 
         }).min().unwrap();
@@ -336,12 +335,14 @@ fn compute_min_sequence_length(memo: &mut Memo, code: Code, depth: usize) -> usi
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
+    const DEPTH: usize = 2;
+
     let codes = load_codes(content)?;
     let mut memo = Memo::new();
 
     let mut complexity = 0;
     for code in codes {
-        let seq_len = compute_min_sequence_length(&mut memo, code, 25);
+        let seq_len = compute_min_sequence_length(&mut memo, code, DEPTH);
         complexity += seq_len * code.value as usize;
     }
 
@@ -349,18 +350,28 @@ fn part_a (content: &[&str]) -> Result<usize> {
 }
 
 /// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
+fn part_b (content: &[&str]) -> Result<usize> {
 
-    Ok(0)
+    const DEPTH: usize = 25;
+
+    let codes = load_codes(content)?;
+    let mut memo = Memo::new();
+
+    let mut complexity = 0;
+    for code in codes {
+        let seq_len = compute_min_sequence_length(&mut memo, code, DEPTH);
+        complexity += seq_len * code.value as usize;
+    }
+
+    Ok(complexity)
 }
 
 pub fn day_21 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 126384);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
