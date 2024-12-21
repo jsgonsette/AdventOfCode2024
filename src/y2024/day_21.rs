@@ -37,6 +37,15 @@ enum DirectionalEntry {
     Activate,
 }
 
+/// A single movement between a pair of directional entries
+type StartDest = (DirectionalEntry, DirectionalEntry);
+
+/// Memoize on the movements, for different depth of robot indirections
+type MemoKey = (StartDest, usize);
+
+/// Memoization of the best sequence length, for different movements and indirection depths
+type Memo = HashMap<MemoKey, usize>;
+
 /// Models the *numerical* keypad with the position of the robot's arm manipulating it
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct NumericalKeypad {
@@ -93,7 +102,7 @@ fn get_raw_sequences_from_coordinates (from: (u8, u8), to: (u8, u8))
     [sequence_0, sequence_1]
 }
 
-/// This function is similar to `get_raw_sequences_from_coordinates` but do not return
+/// This function is similar to [get_raw_sequences_from_coordinates] but do not return
 /// a sequence that would require to move the robot arm above the `empty_button`.
 fn get_sequences_from_coordinates (
     from: (u8, u8),
@@ -146,49 +155,21 @@ impl DirectionalKeypad {
     /// Given the current robot's arm position, return the different directional sequences
     /// that enable to reach the provided `entry` button and to press it.
     ///
-    /// For example, going from `3` to `7` would return those two sequences:
-    /// * `^^<<A`
-    /// * `<<^^A`
+    /// For example, going from `<` to `A` would return this sequence:
+    /// * `>>^A`
+    ///
+    /// **This function updates the current robot's arm position**
     fn get_sequences_to (&mut self, entry: DirectionalEntry) -> Vec<Vec<DirectionalEntry>> {
 
+        // Get the coordinates of the current arm position and of the final position
         let from = Self::entry_to_row_col(self.pos);
         let to = Self::entry_to_row_col(entry);
-
-        let [sequence_0, sequence_1] =
-            get_raw_sequences_from_coordinates(from, to);
-
-        let row_diff = (to.0 as i8 - from.0 as i8).abs () as usize;
-        let col_diff = (to.1 as i8 - from.1 as i8).abs () as usize;
-
-        let sequence_0: Vec<DirectionalEntry> = sequence_0.collect();
-        let sequence_1: Vec<DirectionalEntry> = sequence_1.collect();
 
         // Update the robot arm position
         self.pos = entry;
 
-        // Avoid the vert-horz sequence if we would have to go above the empty button
-        // (start column and destination row cross above it)
-        let avoid_seq_0 = to.0 == 1 && from.1 == 0;
-
-        // Avoid the horz-vert sequence if we would have to go above the empty button
-        // (start row and destination column cross above it)
-        let avoid_seq_1 = to.1 == 0 && from.0 == 1;
-
-        match (row_diff, col_diff) {
-
-            // Avoid returning two identical sequences for full horizontal or vertical movements
-            (0, _) | (_, 0) => vec![sequence_0],
-
-            // Otherwise, return the two sequences provided they do not overlap the empty button
-            _ => {
-                match (avoid_seq_0, avoid_seq_1) {
-                    (false, false) => vec![sequence_0, sequence_1],
-                    (true, false)  => vec![sequence_1],
-                    (false, true)  => vec![sequence_0],
-                    _              => unreachable!(),
-                }
-            }
-        }
+        const EMPTY_BUTTON: (u8, u8) = (1, 0);
+        get_sequences_from_coordinates(from, to, EMPTY_BUTTON)
     }
 
     /// Return the (row, column) coordinate of a button. The *Left key* is in `(0, 0)`
@@ -204,44 +185,31 @@ impl DirectionalKeypad {
 }
 
 impl NumericalKeypad {
+
+    /// New numerical keypad instance, arm starting on the *Activate* button
     fn new () -> Self {
         Self { pos: NumericalEntry::Activate }
     }
 
+    /// Given the current robot's arm position, return the different directional sequences
+    /// that enable to reach the provided `entry` button and to press it.
+    ///
+    /// For example, going from `1` to `8` would return this sequence:
+    /// * `>^^A`
+    /// * `^^>A`
+    ///
+    /// **This function updates the current robot's arm position**
     fn get_sequences_to (&mut self, entry: NumericalEntry) -> Vec<Vec<DirectionalEntry>> {
 
-        let (row_0, col_0) = Self::entry_to_row_col(self.pos);
-        let (row_1, col_1) = Self::entry_to_row_col(entry);
-        let row_diff = (row_1 as i8 - row_0 as i8).abs () as usize;
-        let col_diff = (col_1 as i8 - col_0 as i8).abs () as usize;
+        // Get the coordinates of the current arm position and of the final position
+        let from = Self::entry_to_row_col(self.pos);
+        let to = Self::entry_to_row_col(entry);
 
-        let v_dir = if row_0 < row_1 { DirectionalEntry::Up } else { DirectionalEntry::Down };
-        let h_dir = if col_0 < col_1 { DirectionalEntry::Right } else { DirectionalEntry::Left };
-        let vertical = iter::repeat(v_dir).take(row_diff);
-        let horizontal = iter::repeat(h_dir).take(col_diff);
-
-        let sequence_0: Vec<DirectionalEntry> = vertical.clone().chain(horizontal.clone ()).chain(iter::once(DirectionalEntry::Activate)).collect();
-        let sequence_1: Vec<DirectionalEntry> = horizontal.chain(vertical).chain(iter::once(DirectionalEntry::Activate)).collect();
-
+        // Update the robot arm position
         self.pos = entry;
 
-        match (sequence_0.len (), sequence_1.len ()) {
-            (0, 0) => vec![],
-            (0, _) => vec![sequence_1],
-            (_, 0) => vec![sequence_0],
-            _      => {
-                if row_diff == 0 || col_diff == 0 { vec![sequence_0] }
-                else if row_0 == 0 && col_1 == 0 {
-                    vec![sequence_0]
-                }
-                else if row_1 == 0 && col_0 == 0 {
-                    vec![sequence_1]
-                }
-                else {
-                    vec![sequence_0, sequence_1]
-                }
-            }
-        }
+        const EMPTY_BUTTON: (u8, u8) = (0, 0);
+        get_sequences_from_coordinates(from, to, EMPTY_BUTTON)
     }
 
     /// Return the (row, column) coordinate of a button. The *Activation key* is in `(0, 2)`
@@ -262,6 +230,7 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Load the different codes we have to deal with from the puzzle file `content`
 fn load_codes (content: &[&str]) -> Result<Vec<Code>> {
     let mut reader= RowReader::new(false);
 
@@ -279,120 +248,88 @@ fn load_codes (content: &[&str]) -> Result<Vec<Code>> {
     }).collect()
 }
 
-fn expand_sequence(sequence: &[DirectionalEntry], robot: &mut DirectionalKeypad) -> Vec<Vec<DirectionalEntry>> {
-
-    let first_entry_seq = robot.get_sequences_to(sequence[0]);
-    let remaining_seq = match sequence.len() {
-        1 => return first_entry_seq,
-        _ => expand_sequence(&sequence[1..], robot),
-    };
-
-    first_entry_seq.iter().cartesian_product(remaining_seq.iter())
-        .map (|(seq_0, seq_1)| seq_0.iter().chain(seq_1.iter()).cloned().collect())
-        .collect()
+/// Given a `current_pos` and a `sequence` of entries, return an iterator
+/// over the different movement to execute.
+/// ## Example
+/// ```
+/// current_pos: A
+/// sequence: [1, 8, 0]
+/// return: [(A, 1), (1, 8), (8, 0)]
+/// ```
+fn sequence_to_movements<'a> (current_pos: DirectionalEntry, sequence: &'a [DirectionalEntry]) -> impl Iterator<Item = StartDest> + 'a{
+    let seq = iter::once (current_pos).chain(sequence.iter ().copied());
+    seq.tuple_windows()
 }
 
-type StartDest = (DirectionalEntry, DirectionalEntry);
-type MemoKey = (StartDest, usize);
-type Memo = HashMap<MemoKey, usize>;
+/// Compute the length of the shortest sequence that enables to make a single `movement` on the
+/// numerical keypad through a chain of `depth` robots.
+fn compute_move_length_through_robot_chain(memo: &mut Memo, movement: StartDest, robots: &mut[DirectionalKeypad]) -> usize {
 
-fn expand_sequence_with_robot_chain (memo: &mut Memo, movement: StartDest, robots: &mut[DirectionalKeypad]) -> usize {
-
+    // No robot to consider, we can do the movement ourselves in one step
     if robots.len() == 0 { return 1; }
 
+    // Consult the table and return the value if we know it
     let memo_key = (movement, robots.len());
     if let Some (length) = memo.get(&memo_key) { return *length; }
 
+    // Otherwise, consider the first robot from the chain and get the different
+    // sequences that would enable to execute the movement
     let mut robot = robots [0];
     robot.pos = movement.0;
     let sequences = robot.get_sequences_to(movement.1);
 
+    // Analyze each of such sequence and keep the best one
     let min_length = sequences.iter().map (|seq| {
 
-        let seq = iter::once (DirectionalEntry::Activate).chain(seq.iter ().copied());
-        seq.tuple_windows().map (|(start, dest)| {
-            expand_sequence_with_robot_chain (memo, (start, dest), &mut robots[1..])
+        // The current sequence is split into a succession of movements.
+        // We recurse on each of them and sum up everything
+        sequence_to_movements(DirectionalEntry::Activate, seq).map (|movement| {
+            compute_move_length_through_robot_chain(memo, movement, &mut robots[1..])
         }).sum ()
 
     }).min().unwrap();
 
+    // Save the computed value
     memo.insert(memo_key, min_length);
 
+    // And return the shortest sequence length
     min_length
 }
 
-fn compute_min_sequence_length_2 (memo: &mut Memo, code: Code) -> usize {
+/// Compute the length of the shortest sequence that enables to enter the provided `code`
+/// on the numerical keypad. Parameter `depth` gives the number of intermediate robots
+/// between the final numerical keypad and the robot we manipulate ourselves.
+/// (i.e: 2 for part 1, 25 for part 2)
+fn compute_min_sequence_length(memo: &mut Memo, code: Code, depth: usize) -> usize {
 
     let mut num_key = NumericalKeypad::new();
     let mut robots_dir_key = [DirectionalKeypad::new(); 25];
 
+    // Set up the sequence of buttons to press on the numerical keypad to enter the code
     let digit_seq = code.digits.iter()
         .map(|&d| {NumericalEntry::Digit (d)})
         .chain(iter::once(NumericalEntry::Activate));
 
-    // Sum length for each digit
+    // Sum length required for each digit
     let mut total_length = 0;
     digit_seq.for_each(|entry| {
-
-       // println!("{:?}", entry);
 
         // Get all possible sequences to reach each digit.
         // Take the min of such sequences to get the digit sequence length
         let sequences = num_key.get_sequences_to(entry);
-        let length_digit: usize = sequences.iter ().map (|seq| {
-         //   println!(" - {:?}", seq);
+        let min_length: usize = sequences.iter ().map (|seq| {
 
             // For each sequence, we decompose into a succession of moves. The number of operations
             // is the sum of all the moves needed.
-            let seq = iter::once (DirectionalEntry::Activate).chain(seq.iter ().copied());
-            seq.tuple_windows().map (|(start, dest)| {
-           //     println!("    {:?} -> {:?}", start, dest);
-                expand_sequence_with_robot_chain (memo, (start, dest), &mut robots_dir_key)
-            }).sum()
-            // We expand the current sequence through a chain of `n` robots.
-            // This method return the minimal possible sequence length
+            sequence_to_movements(DirectionalEntry::Activate, seq).map (|movement| {
+                compute_move_length_through_robot_chain(memo, movement, &mut robots_dir_key)
+            }).sum ()
 
         }).min().unwrap();
 
-        total_length += length_digit;
+        total_length += min_length;
     });
 
-  //  println!("total length: {}", total_length);
-    total_length
-}
-
-fn compute_min_sequence_length (code: Code) -> usize {
-
-    let mut num_key = NumericalKeypad::new();
-    let mut dir_key_1 = DirectionalKeypad::new();
-    let mut dir_key_2 = DirectionalKeypad::new();
-
-    let digit_seq = code.digits.iter()
-        .map(|&d| {NumericalEntry::Digit (d)})
-        .chain(iter::once(NumericalEntry::Activate));
-
-    let mut total_length = 0;
-    digit_seq.for_each(|entry| {
-        println!("{:?}", entry);
-        let sequences = num_key.get_sequences_to(entry);
-        let length_0 = sequences.iter ().map (|seq| {
-            println!(" - {:?}", seq);
-            //for ex_seq in expand_sequence(&seq, &mut dir_key_1) {
-            let length_1 = expand_sequence(&seq, &mut dir_key_1).iter().map (|ex_seq| {
-                println!("    ex {:?} ({})", ex_seq, ex_seq.len ());
-                let length_2 = expand_sequence(&ex_seq, &mut dir_key_2).iter().map(|ex_seq_2| {
-                    println!("       ex2 {:?} ({})", ex_seq_2, ex_seq_2.len ());
-                    ex_seq_2.len()
-                }).min().unwrap();
-                length_2
-            }).min ().unwrap();
-            length_1
-        }).min().unwrap();
-
-        total_length += length_0;
-    });
-
-    println!("total length: {}", total_length);
     total_length
 }
 
@@ -404,11 +341,10 @@ fn part_a (content: &[&str]) -> Result<usize> {
 
     let mut complexity = 0;
     for code in codes {
-        let seq_len = compute_min_sequence_length_2(&mut memo, code);
+        let seq_len = compute_min_sequence_length(&mut memo, code, 25);
         complexity += seq_len * code.value as usize;
     }
 
-    println!("Memo length: {}", memo.len());
     Ok(complexity)
 }
 
