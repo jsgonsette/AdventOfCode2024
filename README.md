@@ -12,7 +12,7 @@
 I focus on code *readability* and *usability* first, instead of seeking for performance at all cost. As such, this code is well documented and should be very understandable.
 Here are the results I get to solve the two parts of the problems:
 
-> All benchmarks are run on a **AMD Ryzen 9 5900X**, *single thread*
+> All benchmarks are run on an **AMD Ryzen 9 5900X**, *single thread*
 
 ### [2024](https://adventofcode.com/2024)
 

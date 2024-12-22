@@ -74,7 +74,7 @@ fn price_increase_it (seed: usize) -> impl Iterator<Item=(Price, i8)> {
 }
 
 /// Return an iterator on sequences of four price increase, with the associated sell price.
-fn four_changes_it (seed: usize) -> impl Iterator<Item=(Price, Sequence)> {
+fn sequence_4_it(seed: usize) -> impl Iterator<Item=(Price, Sequence)> {
 
     let price_it = price_increase_it(seed)
         .map (|(price, _increase)| price)
@@ -120,7 +120,7 @@ fn part_b (content: &[&str]) -> Result<usize> {
         let mut seq_dones = HashSet::<Sequence>::new();
 
         // for each associated sequence
-        for (price, sequence) in four_changes_it(seed) {
+        for (price, sequence) in sequence_4_it(seed) {
 
             // Skip if seen already
             if seq_dones.contains(&sequence) { continue; }
