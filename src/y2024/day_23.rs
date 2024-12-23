@@ -52,7 +52,7 @@ type Connection = (ComputerName, ComputerName);
 type Clique3 = (ComputerName, ComputerName, ComputerName);
 
 /// A clique of variable size
-type Clique = HashSet<ComputerName>;
+type Clique = Vec<ComputerName>;
 
 
 /// Load the list of connections from the puzzle file content
@@ -120,7 +120,9 @@ fn get_all_3_cliques(graph: &Graph, node: &ComputerName) -> Vec<Clique3> {
     cliques
 }
 
-fn expand_clique (graph: &Graph, processed: &HashSet::<ComputerName>, mut clique: Clique, from: &ComputerName) -> Clique {
+/// Given a `graph` and a set of `processed` nodes to ignore, expand the provided `clique` with
+/// node `from`'s neighborhood.
+fn expand_clique (graph: &Graph, processed: &HashSet::<ComputerName>, clique: &mut Clique, from: &ComputerName) {
 
     for n in graph.get (from).unwrap().iter() {
         if processed.contains(n) { continue }
@@ -128,12 +130,12 @@ fn expand_clique (graph: &Graph, processed: &HashSet::<ComputerName>, mut clique
         let neighbors = graph.get(n).unwrap();
         let can_expand = clique.iter ().all(| clique_node | neighbors.contains(clique_node) );
         if can_expand {
-            clique.insert(*n);
+            clique.push(*n);
         }
     }
-    clique
 }
 
+/// Find the clique of `graph` containing the greatest amount of nodes.
 fn find_max_clique (graph: &Graph) -> Clique {
 
     let mut max_clique = Clique::new();                 // Track the biggest clique
@@ -147,13 +149,13 @@ fn find_max_clique (graph: &Graph) -> Clique {
         processed.insert(*node);
         if 1 + neighbors.len() < max_clique.len() { continue }
 
-        // Find pairs of computers (edge) around which we try to build a bigger clique
+        // Iterate on pairs of computers (edge) around which we try to build a bigger clique
         for n in neighbors.iter() {
             if processed.contains(n) { continue }
 
-            current_clique.insert(*n);
-            current_clique.insert(*node);
-            current_clique = expand_clique(graph, &processed, current_clique, node);
+            current_clique.push(*n);
+            current_clique.push(*node);
+            expand_clique(graph, &processed, &mut current_clique, node);
 
             // Save this clique if it contains more elements
             if current_clique.len() > max_clique.len() { max_clique = current_clique.clone(); }
@@ -192,11 +194,8 @@ fn part_b (content: &[&str]) -> Result<String> {
     let connections = load_connections (content)?;
     let graph = make_graph(connections);
 
-    // Find the clique containing the highest number of computers
-    let max_clique = find_max_clique(&graph);
-
-    // Sort the computers in the clique by name
-    let mut max_clique: Vec<ComputerName> = max_clique.into_iter().collect();
+    // Find the clique containing the highest number of computers. Then sort it by computer name.
+    let mut max_clique = find_max_clique(&graph);
     max_clique.sort();
 
     // Build the password from those names
