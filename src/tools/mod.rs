@@ -1,11 +1,14 @@
 mod coordinates;
 mod threads;
+mod topo_sort;
 
 use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use num::Integer;
+
 pub use coordinates::{Direction, Coo};
+pub use topo_sort::{TopoSortElement, topo_sort};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Sign { Positive, Negative }
