@@ -18,26 +18,28 @@ Here are the results I get to solve the two parts of the problems:
 
 | Day | Puzzle                                                         | Code                               | Perf. (ms) |
 |-----|----------------------------------------------------------------|------------------------------------|------------|
-| 01  | [Historian Hysteria](https://adventofcode.com/2024/day/1)      | [day_01.rs](./src/y2024/day_01.rs) | 0.153      |
+| 01  | [Historian Hysteria](https://adventofcode.com/2024/day/1)      | [day_01.rs](./src/y2024/day_01.rs) | 0.166      |
 | 02  | [Red-Nosed Reports](https://adventofcode.com/2024/day/2)       | [day_02.rs](./src/y2024/day_02.rs) | 0.280      |
-| 03  | [Mull It Over](https://adventofcode.com/2024/day/3)            | [day_03.rs](./src/y2024/day_03.rs) | 0.090      |
-| 04  | [Ceres Search Hysteria](https://adventofcode.com/2024/day/4)   | [day_04.rs](./src/y2024/day_04.rs) | 0.350      |
+| 03  | [Mull It Over](https://adventofcode.com/2024/day/3)            | [day_03.rs](./src/y2024/day_03.rs) | 0.097      |
+| 04  | [Ceres Search Hysteria](https://adventofcode.com/2024/day/4)   | [day_04.rs](./src/y2024/day_04.rs) | 0.288      |
 | 05  | [Print Queue](https://adventofcode.com/2024/day/5)             | [day_05.rs](./src/y2024/day_05.rs) | 2.692      |
-| 06  | [Guard Gallivant](https://adventofcode.com/2024/day/6)         | [day_06.rs](./src/y2024/day_06.rs) | 123.5      |
-| 07  | [Bridge Repair](https://adventofcode.com/2024/day/7)           | [day_07.rs](./src/y2024/day_07.rs) | 19.71      |
-| 08  | [Resonant Collinearity](https://adventofcode.com/2024/day/8)   | [day_08.rs](./src/y2024/day_08.rs) | 0.171      |
-| 09  | [Disk Fragmenter](https://adventofcode.com/2024/day/9)         | [day_09.rs](./src/y2024/day_09.rs) | 5.966      |
-| 10  | [Hoof It](https://adventofcode.com/2024/day/10)                | [day_10.rs](./src/y2024/day_10.rs) | 1.673      |
-| 11  | [Plutonian Pebbles](https://adventofcode.com/2024/day/11)      | [day_11.rs](./src/y2024/day_11.rs) | 13.99      |
-| 12  | [Garden Groups](https://adventofcode.com/2024/day/12)          | [day_12.rs](./src/y2024/day_12.rs) | 2.418      |
-| 13  | [Claw Contraption](https://adventofcode.com/2024/day/13)       | [day_13.rs](./src/y2024/day_13.rs) | 2.004      |
-| 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)       | [day_14.rs](./src/y2024/day_14.rs) | 34.09      |
-| 15  | [Warehouse Woes](https://adventofcode.com/2024/day/15)         | [day_15.rs](./src/y2024/day_15.rs) | 2.000      |
-| 16  | [Reindeer Maze](https://adventofcode.com/2024/day/16)          | [day_16.rs](./src/y2024/day_16.rs) | 9.332      |
-| 17  | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | [day_17.rs](./src/y2024/day_17.rs) | 0.078      |
+| 06  | [Guard Gallivant](https://adventofcode.com/2024/day/6)         | [day_06.rs](./src/y2024/day_06.rs) | 82.10      |
+| 07  | [Bridge Repair](https://adventofcode.com/2024/day/7)           | [day_07.rs](./src/y2024/day_07.rs) | 18.79      |
+| 08  | [Resonant Collinearity](https://adventofcode.com/2024/day/8)   | [day_08.rs](./src/y2024/day_08.rs) | 0.102      |
+| 09  | [Disk Fragmenter](https://adventofcode.com/2024/day/9)         | [day_09.rs](./src/y2024/day_09.rs) | 6.279      |
+| 10  | [Hoof It](https://adventofcode.com/2024/day/10)                | [day_10.rs](./src/y2024/day_10.rs) | 0.908      |
+| 11  | [Plutonian Pebbles](https://adventofcode.com/2024/day/11)      | [day_11.rs](./src/y2024/day_11.rs) | 15.22      |
+| 12  | [Garden Groups](https://adventofcode.com/2024/day/12)          | [day_12.rs](./src/y2024/day_12.rs) | 2.188      |
+| 13  | [Claw Contraption](https://adventofcode.com/2024/day/13)       | [day_13.rs](./src/y2024/day_13.rs) | 1.945      |
+| 14  | [Restroom Redoubt](https://adventofcode.com/2024/day/14)       | [day_14.rs](./src/y2024/day_14.rs) | 32.29      |
+| 15  | [Warehouse Woes](https://adventofcode.com/2024/day/15)         | [day_15.rs](./src/y2024/day_15.rs) | 1.751      |
+| 16  | [Reindeer Maze](https://adventofcode.com/2024/day/16)          | [day_16.rs](./src/y2024/day_16.rs) | 10.20      |
+| 17  | [Chronospatial Computer](https://adventofcode.com/2024/day/17) | [day_17.rs](./src/y2024/day_17.rs) | 0.079      |
 | 18  | [RAM Run](https://adventofcode.com/2024/day/18)                | [day_18.rs](./src/y2024/day_18.rs) | 6.627      |
-| 19  | [Linen Layout](https://adventofcode.com/2024/day/19)           | [day_19.rs](./src/y2024/day_19.rs) | 21.07      |
-| 20  | [Race Condition](https://adventofcode.com/2024/day/20)         | [day_20.rs](./src/y2024/day_20.rs) | 48.42      |
-| 21  | [Keypad Conundrum](https://adventofcode.com/2024/day/21)       | [day_21.rs](./src/y2024/day_21.rs) | 0.173      |
-| 22  | [Monkey Market](https://adventofcode.com/2024/day/22)          | [day_22.rs](./src/y2024/day_22.rs) | 305.7      |
-| 23  | [LAN Party](https://adventofcode.com/2024/day/23)              | [day_23.rs](./src/y2024/day_23.rs) | 7.463      |
+| 19  | [Linen Layout](https://adventofcode.com/2024/day/19)           | [day_19.rs](./src/y2024/day_19.rs) | 21.81      |
+| 20  | [Race Condition](https://adventofcode.com/2024/day/20)         | [day_20.rs](./src/y2024/day_20.rs) | 54.94      |
+| 21  | [Keypad Conundrum](https://adventofcode.com/2024/day/21)       | [day_21.rs](./src/y2024/day_21.rs) | 0.171      |
+| 22  | [Monkey Market](https://adventofcode.com/2024/day/22)          | [day_22.rs](./src/y2024/day_22.rs) | 332.7      |
+| 23  | [LAN Party](https://adventofcode.com/2024/day/23)              | [day_23.rs](./src/y2024/day_23.rs) | 6.377      |
+| 24  | [Crossed Wires](https://adventofcode.com/2024/day/24)          | [day_24.rs](./src/y2024/day_24.rs) | 0.328      |
+| 25  | [Code Chronicle](https://adventofcode.com/2024/day/25)         | [day_25.rs](./src/y2024/day_25.rs) | 0.272      |

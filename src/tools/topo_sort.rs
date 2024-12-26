@@ -6,8 +6,8 @@ use std::hash::Hash;
 pub trait TopoSortElement<I>  {
     type Iter: Iterator<Item = I>;
 
-    /// Return an iterator on the successors of this element
-    fn what_next (&self) -> Self::Iter;
+    /// Return an iterator on the predecessors of this element
+    fn what_before(&self) -> Self::Iter;
 }
 
 /// Given an unsorted map of `items` of type [T], identified by values of type [I],
@@ -30,7 +30,7 @@ where T: TopoSortElement<I> {
         while let Some((id, item_ref)) = dfs_queue.pop() {
 
             // Check if all the successors of the current item are visited
-            let all_next_visited = item_ref.what_next().all (|nid| {
+            let all_next_visited = item_ref.what_before().all (|nid| {
                 visited.contains(&nid)
             });
 
@@ -44,7 +44,7 @@ where T: TopoSortElement<I> {
             else {
                 dfs_queue.push((id, item_ref));
 
-                for next_id in item_ref.what_next() {
+                for next_id in item_ref.what_before() {
                     if !visited.contains(&next_id) {
                         let next = items.get(&next_id).unwrap();
                         dfs_queue.push((next_id, next));

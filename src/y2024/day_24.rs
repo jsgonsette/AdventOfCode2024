@@ -21,7 +21,7 @@ x02 OR y02 -> z02";
 impl TopoSortElement<GateName> for Gate {
     type Iter = std::vec::IntoIter<GateName>;
 
-    fn what_next(&self) -> Self::Iter  {
+    fn what_before(&self) -> Self::Iter  {
         match self {
             Gate::Value(_) => vec![].into_iter(),
             Gate::OR(lhs, rhs) => vec![*lhs, *rhs].into_iter(),
@@ -33,6 +33,9 @@ impl TopoSortElement<GateName> for Gate {
 
 /// The 3-letter name of a gate
 type GateName = [char; 3];
+
+/// A pair of gates that has been unfortunately swapped
+type SwappedPair = (GateName, GateName);
 
 /// Models a gate as an input value or as a logical operation combining other gates
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -58,6 +61,17 @@ impl Gate {
         }
     }
 
+    fn same_kind (&self, other: &Self) -> bool {
+        match (self, other) {
+            (Gate::Value(_), Gate::Value(_)) => true,
+            (Gate::OR(_, _), Gate::OR(_, _)) => true,
+            (Gate::XOR(_, _), Gate::XOR(_, _)) => true,
+            (Gate::AND(_, _), Gate::AND(_, _)) => true,
+            _ => false,
+        }
+    }
+
+    /// Return the names of the 2 gates we are connected to
     fn input_names (&self) -> Option<(GateName, GateName)> {
         match self {
             Gate::Value(_) => None,
@@ -66,16 +80,7 @@ impl Gate {
             Gate::AND(a, b) => Some((*a, *b)),
         }
     }
-
-    fn other_input_name (&self, first_input: &GateName) -> Option<GateName> {
-        let Some((a, b)) =self.input_names() else { return None };
-
-        if a == *first_input { Some(b) }
-        else if b == *first_input { Some(a) }
-        else { None }
-    }
 }
-
 
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
@@ -101,13 +106,13 @@ fn load_gates (content: &[&str]) -> Result<Gates> {
             continue;
         }
 
-        // Extract the value of an input
+        // Make an input value
         if is_value {
             let name = get_name(row);
             let val = row.as_bytes()[5] as char == '1';
             gates.insert(name, Gate::Value(val));
         }
-        // or extract a logical operation
+        // or make a logical operation
         else {
             let tokens: Vec<&str> = row.split_whitespace().collect();
             let name_0 = get_name (tokens [0]);
@@ -172,6 +177,44 @@ fn compute (gates: &Gates, topo_order: &Vec<GateName>) -> u64 {
     z
 }
 
+/// Look into the circuit of `gates` for some specific `gate`, and return its name, if any.
+/// The input names can be in any order (e.g. `Gate::OR ('a', 'b')` is equivalent to `Gate::OR ('b', 'a')`
+fn find_gate (gates: &Gates, gate: &Gate) -> Option<GateName> {
+    let get_swap = gate.swap();
+    let f0 = gates.iter ().find_map(|(output, g)| if *g == *gate { Some (*output) } else { None } );
+    let f1 = gates.iter ().find_map(|(output, g)| if *g == get_swap { Some (*output) } else { None } );
+
+    f0.or(f1)
+}
+
+/// This function is similar to [find_gate] except that we return the first gate found that has
+/// the same function and one of its entry matching one of the requested names.
+fn find_gate_partial (gates: &Gates, gate: &Gate) -> Option<(GateName, SwappedPair)> {
+
+    let Some((gate_a, gate_b)) = gate.input_names() else { return None };
+
+    gates.iter ().find_map(|(gate_name, g)| {
+        let Some((a, b)) = g.input_names() else { return None };
+
+        if gate.same_kind(g) {
+            if a == gate_a { Some ((*gate_name, (b, gate_b))) }
+            else if b == gate_a { Some ((*gate_name, (a, gate_b))) }
+            else if a == gate_b { Some ((*gate_name, (b, gate_a))) }
+            else if b == gate_b { Some ((*gate_name, (a, gate_a))) }
+            else { None }
+        } else {
+            None
+        }
+    })
+}
+
+/// Patch the circuit of `gates` by swapping the definition of the 2 provided
+/// gates `name_a` and `name_b`.
+/// ## Example for `kks` and `gnd`
+/// ```
+/// y10 AND x10 -> kks    ==>   y10 AND x10 -> gdn
+/// trn OR vft  -> gdn          trn OR vft  -> kks
+/// ```
 fn patch_circuit (gates: &mut Gates, name_a: &GateName, name_b: &GateName) {
 
     let gate_a = *gates.get (name_a).unwrap();
@@ -206,6 +249,60 @@ fn set_x_y (gates: &mut Gates, mut x: u64, mut y:u64) {
     }
 }
 
+/// Here is a single bit stage (full adder) of an n-bit adder. There are five possible
+/// outputs eligible for inversion (1)..(5). We check those five points in order and return
+/// the first encountered error.
+///
+/// ```
+///             x ─────┬── AND ─(4)────────────────────────────┬── OR ──(2)─── c_out
+///                    │                                       │
+///                    ├── XOR ─(1)───┬── XOR ──(3)── z (sum)  │
+///             y ─────┘              │                        │
+///                                   │── AND ──(5)────────────┘
+///             c_in ─────(2)─────────┘
+/// ```
+fn check_full_adder_stage(gates: &Gates, stage: usize, carry: &mut GateName) -> Option<SwappedPair> {
+
+    // The expected x and y input names for this stage
+    let x = make_entry_name('x', stage);
+    let y = make_entry_name('y', stage);
+
+    // Output names for the XOR and AND operations that process the x and y inputs
+    // (as they are connected to inputs only, they must exist)
+    let xor_xy = find_gate(gates, &Gate::XOR (x, y)).unwrap();
+    let and_xy = find_gate(gates, &Gate::AND (x, y)).unwrap();
+
+    // Look for a AND gate connected to the carry in signal and to the xor_xy gate.
+    // If not found, this means that either (1) or (2) are inverted
+    let gate_and = Gate::AND (xor_xy, *carry);
+    let carry_and = match find_gate(gates, &gate_and) {
+        None => {
+            let (_, swapped) = find_gate_partial(gates, &gate_and).unwrap();
+            return Some(swapped);
+        },
+        Some(name) => { name }
+    };
+
+    // (3) Find the gate delivering the 1-bit sum. This gate must be called z.
+    let z = find_gate(gates, &Gate::XOR (*carry, xor_xy)).unwrap();
+    let expected_z = make_entry_name('z', stage);
+    if z != expected_z {
+        return Some((z, expected_z));
+    }
+
+    // Look for a OR gate connected to the two AND gates
+    // If not found, this means that either (4) or (5) are inverted
+    *carry = match find_gate(gates, &Gate::OR (carry_and, and_xy)) {
+        None => {
+            let (_, swapped) = find_gate_partial(gates, &Gate::OR (carry_and, and_xy)).unwrap();
+            return Some(swapped);
+        },
+        Some(name) => { name }
+    };
+
+    None
+}
+
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
@@ -219,103 +316,50 @@ fn part_a (content: &[&str]) -> Result<usize> {
     Ok(z as usize)
 }
 
-fn find_gate (gates: &Gates, gate: &Gate) -> Option<GateName> {
-    let get_swap = gate.swap();
-    let f0 = gates.iter ().find_map(|(output, g)| if *g == *gate { Some (*output) } else { None } );
-    let f1 = gates.iter ().find_map(|(output, g)| if *g == get_swap { Some (*output) } else { None } );
-
-    f0.or(f1)
-}
-
-fn find_gate_connected_to (gates: &Gates, name: &GateName) -> Option<GateName> {
-    gates.iter ().find_map(|(output, g)| {
-        let Some ((a, b)) = g.input_names() else { return None };
-        if a == *name || b == *name { Some (*output) }
-        else { None }
-    })
-}
-
-type ErrorPair = (GateName, GateName);
-
-/// ```
-///             x ─────┬── AND ───────────────────────┬── OR ─── c_out
-///                    │                              │
-///                    ├── XOR ──┬── XOR ─── z (sum)  │
-///             y ─────┘         │                    │
-///                              │── AND ─────────────┘
-///             c_in ────────────┘
-/// ```
-fn check_1_bit_additioner (gates: &Gates, stage: usize, carry: &mut GateName) -> Option<ErrorPair> {
-
-    println!("Carry = {:?}", &carry);
-
-    // The expected x and y input names for this stage
-    let x = make_entry_name('x', stage);
-    let y = make_entry_name('y', stage);
-
-    // Output names for the XOR and AND operations that process the x and y inputs
-    // (as they are connected to inputs only, they must exist)
-    let mut xor_xy = find_gate(gates, &Gate::XOR (x, y)).unwrap();
-    let mut and_xy = find_gate(gates, &Gate::AND (x, y)).unwrap();
-    println!("XOR {:?}", xor_xy);
-    println!("AND {:?}", and_xy);
-
-    // Output name of the second AND gate connected to the carry input.
-    // The carry is assumed to be correct. The second entry may not.
-    let carry_and = match find_gate(gates, &Gate::AND (xor_xy, *carry)) {
-        None => {
-            let gate = find_gate_connected_to(gates, &carry).unwrap();
-            let wrong_output = gates [&gate].other_input_name(&carry).unwrap();
-            return Some((wrong_output, xor_xy));
-        },
-        Some(name) => { name }
-    };
-
-    let z = find_gate(gates, &Gate::XOR (*carry, xor_xy)).unwrap();
-    let expected_z = make_entry_name('z', stage);
-    if z != expected_z {
-        return Some((z, expected_z));
-    }
-    println!("XOR Z {:?}", z);
-
-    *carry = find_gate(gates, &Gate::OR (carry_and, and_xy)).unwrap();
-    println!("carry {:?}", carry);
-
-    None
-}
-
 /// Solve second part of the puzzle
-fn part_b (content: &[&str]) -> Result<usize> {
+fn part_b (content: &[&str]) -> Result<String> {
 
     // Load the circuit and compute the topological ordering
     let mut gates = load_gates(content)?;
-    let gate_names = topo_sort(&gates);
+    let mut errors: Vec<String> = Vec::new();
 
-    set_x_y(&mut gates, 1, 0);
-    let z = compute(&gates, &gate_names);
-    println!("Z:{}", z);
+    let x00 = make_entry_name('x', 0);
+    let y00 = make_entry_name('y', 0);
+    let mut carry = find_gate(&gates, &Gate::AND (x00, y00)).unwrap();
 
-    let mut carry = ['w', 'r', 'd'];
-    for offset in 1..16 {
-        println!("\nOffset {}", offset);
-        let error = check_1_bit_additioner (&gates, offset, &mut carry);
+    // Check each full adder stage
+    for stage in 1..44 {
+        let error = check_full_adder_stage(&gates, stage, &mut carry);
+
+        // In case of error, record it and patch the circuit
         if let Some((a, b)) = error {
-            println!("Error between {:?}, {:?}", a, b);
+            errors.push(a.iter ().collect());
+            errors.push(b.iter ().collect());
             patch_circuit(&mut gates, &a, &b);
+
+            // Check the error is gone and get the correct carry
+            assert_eq!(check_full_adder_stage(&gates, stage, &mut carry), None);
         }
-        check_1_bit_additioner (&gates, offset, &mut carry);
     }
 
-    Ok(0)
+    // Bonus, make some computation to check the result
+    #[cfg(debug_assertions)]
+    {
+        let topo_order: Vec<GateName> = topo_sort(&gates);
+        set_x_y(&mut gates, 0x69696969, 0x42424242);
+        debug_assert!(compute(&gates, &topo_order) == 0x69696969 + 0x42424242);
+    }
+
+    errors.sort_unstable();
+    Ok (errors.join(","))
 }
 
 pub fn day_24 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 4);
-    //debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
 
     let ra = part_a(content)?;
     let rb = part_b(content)?;
 
-    Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
+    Ok((Solution::Unsigned(ra), Solution::Text(rb)))
 }
