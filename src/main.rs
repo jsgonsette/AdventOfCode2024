@@ -17,6 +17,8 @@ use std::time::Duration;
 pub use tools::{Cell, CellArea};
 use crate::y2023::Y2023;
 
+/// https://www.maurits.vdschee.nl/scatterplot/
+
 /// A function solving the problem of the day.
 /// * Input param is a vector of strings (input file)
 /// * Output are the two problem answers (part a and b)
@@ -47,12 +49,12 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 20..20);
+    solve_year(Y2022, 17..26);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 24..25);
+    solve_year(Y2024, 25..25);
 
-    let result = benchmark_year(&Y2024);
-    dbg!(&result);
+    //let result = benchmark_year(&Y2024);
+    //dbg!(&result);
 
     Ok(())
 }

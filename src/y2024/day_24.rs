@@ -237,6 +237,7 @@ fn make_entry_name(prefix: char, bit_offset: usize) -> GateName {
 /// Change the value of the circuit inputs with the provided 64-bit values `x` and `y`.
 /// Those values are spilt in individual bits that are dispatched on the corresponding
 /// inputs `x01..x63` and `y01..y63`
+#[cfg(debug_assertions)]
 fn set_x_y (gates: &mut Gates, mut x: u64, mut y:u64) {
 
     for i in 0..64 {
