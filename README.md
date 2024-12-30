@@ -43,3 +43,5 @@ Here are the results I get to solve the two parts of the problems:
 | 23  | [LAN Party](https://adventofcode.com/2024/day/23)              | [day_23.rs](./src/y2024/day_23.rs) | 6.377      |
 | 24  | [Crossed Wires](https://adventofcode.com/2024/day/24)          | [day_24.rs](./src/y2024/day_24.rs) | 0.328      |
 | 25  | [Code Chronicle](https://adventofcode.com/2024/day/25)         | [day_25.rs](./src/y2024/day_25.rs) | 0.272      |
+
+![](./out/perfo-2024.svg)

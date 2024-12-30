@@ -1,0 +1,146 @@
+<svg fill="rgba(255, 255, 255, 0.7)" height="512" viewBox="0 0 1024 512" width="1024" xmlns="http://www.w3.org/2000/svg">
+<script>
+
+        function highlight(rect) {
+          rect.setAttribute("stroke", "white");
+          rect.setAttribute("stroke-width", "2");
+        }
+
+        // Function to remove highlight on mouseout
+        function unhighlight(rect) {
+          rect.setAttribute("stroke", "none");
+        }
+        
+</script>
+<g>
+<rect fill="rgba(255, 255, 255, 0.6)" height="512" width="1024" x="0" y="0"/>
+<rect fill="rgb(200, 200, 200)" height="436" stroke="black" stroke-width="2" width="952" x="68" y="51"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="400">
+100 µs
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="400" y2="400"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="313">
+1 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="313" y2="313"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="226">
+10 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="226" y2="226"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="139">
+100 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="139" y2="139"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="51">
+1s
+</text>
+<linearGradient gradientUnits="userSpaceOnUse" id="gradient" x1="0%" x2="0%" y1="487" y2="51">
+<stop offset="0%" stop-color="rgb(30,30,100)"/>
+<stop offset="20%" stop-color="rgb(25,140,140)"/>
+<stop offset="40%" stop-color="rgb(50,180,80)"/>
+<stop offset="60%" stop-color="rgb(255,240,100)"/>
+<stop offset="80%" stop-color="rgb(255,70,10)"/>
+<stop offset="100%" stop-color="black"/>
+</linearGradient>
+<rect fill="url(#gradient)" height="307" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="569" y="180"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="581" y="500">
+14
+</text>
+<rect fill="url(#gradient)" height="131" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="112" y="356"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="124" y="500">
+2
+</text>
+<rect fill="url(#gradient)" height="288" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="302" y="199"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="314" y="500">
+7
+</text>
+<rect fill="url(#gradient)" height="196" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="607" y="291"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="619" y="500">
+15
+</text>
+<rect fill="url(#gradient)" height="216" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="226" y="271"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="238" y="500">
+5
+</text>
+<rect fill="url(#gradient)" height="183" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="417" y="304"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="429" y="500">
+10
+</text>
+<rect fill="url(#gradient)" height="242" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="378" y="245"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="390" y="500">
+9
+</text>
+<rect fill="url(#gradient)" height="83" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="683" y="404"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="695" y="500">
+17
+</text>
+<rect fill="url(#gradient)" height="109" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="74" y="378"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="86" y="500">
+1
+</text>
+<rect fill="url(#gradient)" height="205" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="531" y="282"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="543" y="500">
+13
+</text>
+<rect fill="url(#gradient)" height="250" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="721" y="237"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="733" y="500">
+18
+</text>
+<rect fill="url(#gradient)" height="291" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="759" y="196"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="771" y="500">
+19
+</text>
+<rect fill="url(#gradient)" height="278" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="455" y="209"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="467" y="500">
+11
+</text>
+<rect fill="url(#gradient)" height="204" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="493" y="283"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="505" y="500">
+12
+</text>
+<rect fill="url(#gradient)" height="126" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="988" y="361"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="1000" y="500">
+25
+</text>
+<rect fill="url(#gradient)" height="108" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="835" y="379"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="847" y="500">
+21
+</text>
+<rect fill="url(#gradient)" height="86" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="150" y="401"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="162" y="500">
+3
+</text>
+<rect fill="url(#gradient)" height="323" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="797" y="164"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="809" y="500">
+20
+</text>
+<rect fill="url(#gradient)" height="92" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="340" y="395"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="352" y="500">
+8
+</text>
+<rect fill="url(#gradient)" height="250" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="912" y="237"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="924" y="500">
+23
+</text>
+<rect fill="url(#gradient)" height="345" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="264" y="142"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="276" y="500">
+6
+</text>
+<rect fill="url(#gradient)" height="395" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="874" y="92"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="886" y="500">
+22
+</text>
+<rect fill="url(#gradient)" height="128" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="188" y="359"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="200" y="500">
+4
+</text>
+<rect fill="url(#gradient)" height="134" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="950" y="353"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="962" y="500">
+24
+</text>
+<rect fill="url(#gradient)" height="265" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="645" y="222"/>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="657" y="500">
+16
+</text>
+</g>
+</svg>

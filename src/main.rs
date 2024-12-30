@@ -2,19 +2,21 @@ mod tools;
 mod y2022;
 mod y2023;
 mod y2024;
+mod benchmark;
 
 use crate::y2022::Y2022;
 use crate::y2024::Y2024;
 use anyhow::*;
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::{stdout, BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader};
 use std::ops::RangeBounds;
 use std::result::Result::Ok;
 use std::time::Duration;
 
+
 pub use tools::{Cell, CellArea};
+use crate::benchmark::{benchmark_year, make_svg};
 use crate::y2023::Y2023;
 
 /// https://www.maurits.vdschee.nl/scatterplot/
@@ -53,9 +55,10 @@ fn main() -> Result<()> {
     solve_year(Y2023, 10..10);
     solve_year(Y2024, 25..25);
 
-    //let result = benchmark_year(&Y2024);
+    let result = benchmark_year(&Y2024, 100);
     //dbg!(&result);
 
+    make_svg(&result);
     Ok(())
 }
 
@@ -86,46 +89,6 @@ where Y : Year {
     }
 }
 
-/// The result of performance benchmarking, indexed on the day numbers.
-type BenchmarkResult = HashMap<u32, Result<Duration>>;
-
-fn benchmark_year<Y> (year: &Y) -> BenchmarkResult
-where Y : Year {
-
-    println!("Benchmark year {:?}: ", year.get_year());
-
-    let mut durations = BenchmarkResult::new();
-    const REPETITIONS: u32 = 100;
-
-    for _ in 0..REPETITIONS {
-        print!(".");
-        stdout().flush().expect("TODO: panic message");
-        
-        for day in 1..=25 {
-
-            // Get the function related to the current day, or skip the test
-            let Some(fn_solve) = year.get_day_fn(day) else { continue };
-
-            // Also skip if failed in previous iteration
-            let day_entry = durations.entry(day).or_insert_with(|| Ok(Duration::default()));
-            let Ok(day_duration) = day_entry else { continue };
-
-            // Solve and collect the solving time, or the error
-            match solve_day(year.get_year(), day, fn_solve) {
-                Ok((_a, _b, duration)) => { *day_duration += duration; }
-                Err(err) => { *day_entry = Err(err) }
-            };
-        }
-    }
-
-    for duration in durations.values_mut() {
-        if let Ok(duration) = duration {
-            *duration /= REPETITIONS;
-        }
-    }
-
-    durations
-}
 
 /// Solve for the given `day` of the `year`, thanks to the provided function `fn_solve`.
 /// In case of success, return the two answers and the duration to compute them.
