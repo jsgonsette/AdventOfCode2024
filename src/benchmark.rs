@@ -81,7 +81,6 @@ pub fn make_svg (benchmark_result: &BenchmarkResult) {
         .set("viewBox", (0, 0, svg_width, svg_height))
         .set("width", svg_width)
         .set("height", svg_height)
-        .set("fill", "rgba(255, 255, 255, 0.7)")
         .set("xmlns", "http://www.w3.org/2000/svg");
 
     let margin_left = svg_width / 15;

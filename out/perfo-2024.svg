@@ -42,7 +42,11 @@
 <stop offset="80%" stop-color="rgb(255,70,10)"/>
 <stop offset="100%" stop-color="black"/>
 </linearGradient>
-<rect fill="url(#gradient)" height="307" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="569" y="180"/>
+<rect id="test" fill="url(#gradient)" height="307" onmouseout="unhighlight(this)" onmouseover="highlight(this)" style="cursor: pointer;" width="25.386667" x="569" y="180">
+    <set attributeName="fill" to="#ec008c"
+         begin="test.mouseover"
+         end="test.mouseout"/>
+</rect>
 <text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="581" y="500">
 14
 </text>
