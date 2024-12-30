@@ -4,7 +4,7 @@ use std::ops::Div;
 use std::time::Duration;
 use itertools::Itertools;
 use svg::Document;
-use svg::node::element::{Group, Rectangle, Text, LinearGradient, Stop, Line, Script};
+use svg::node::element::{Group, Rectangle, Text, LinearGradient, Stop, Line, Animate};
 use crate::{solve_day, Year};
 
 
@@ -95,21 +95,6 @@ pub fn make_svg (benchmark_result: &BenchmarkResult) {
     let bar_width = bar_width * histo_width as f32 / new_width;
     let space = space * histo_width as f32 / new_width;
 
-    let script = Script::new(
-        r#"
-        function highlight(rect) {
-          rect.setAttribute("stroke", "white");
-          rect.setAttribute("stroke-width", "2");
-        }
-
-        // Function to remove highlight on mouseout
-        function unhighlight(rect) {
-          rect.setAttribute("stroke", "none");
-        }
-        "#,
-    );
-    document = document.add(script);
-
     let mut group = Group::new();
 
     let background = Rectangle::new()
@@ -193,20 +178,29 @@ pub fn make_svg (benchmark_result: &BenchmarkResult) {
     for (&day, duration) in benchmark_result.iter() {
         let Ok(duration) = duration else { continue };
 
+        let id = format!("day{:02}", day);
         let y = (duration.as_micros() as f32 / 10.0).log10().max(0.0);
         let bar_height = (y * histo_height as f32 / 5.0) as i32;
         let x_position = margin_left + (space / 2.0 + (day-1) as f32 * (space + bar_width)) as i32;
         let y_position = margin_top + histo_height - bar_height;
 
         let bar = Rectangle::new()
+            .set("id", id.clone())
             .set("x", x_position)
             .set("y", y_position)
             .set("width", bar_width)
             .set("height", bar_height)
             .set("style", "cursor: pointer;")
-            .set("onmouseover", "highlight(this)")
-            .set("onmouseout", "unhighlight(this)")
-            .set("fill", "url(#gradient)");
+            .set("fill", "url(#gradient)")
+            .add(
+                Animate::new()
+                    .set("attributeName", "fill")
+                    .set("from", "#ec008c")
+                    .set("to", "#ec008c")
+                    .set("begin", format!("{}.mouseover", &id))
+                    .set("end", format!("{}.mouseout", &id))
+                    .set("dur", "0s"),
+            );
 
         let text = Text::new(day.to_string())
             .set("x", x_position + bar_width as i32 / 2)
