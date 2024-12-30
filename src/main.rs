@@ -13,11 +13,10 @@ use std::io::{BufRead, BufReader};
 use std::ops::RangeBounds;
 use std::result::Result::Ok;
 use std::time::Duration;
-
-
-pub use tools::{Cell, CellArea};
 use crate::benchmark::{benchmark_year, make_svg};
 use crate::y2023::Y2023;
+
+pub use tools::{Cell, CellArea};
 
 /// https://www.maurits.vdschee.nl/scatterplot/
 
@@ -51,14 +50,13 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 17..26);
+    solve_year(Y2022, 17..18);
     solve_year(Y2023, 10..10);
     solve_year(Y2024, 25..25);
 
-    let result = benchmark_year(&Y2024, 100);
-    //dbg!(&result);
+    //let result = benchmark_year(&Y2024, 100);
+    //make_svg(&result);
 
-    make_svg(&result);
     Ok(())
 }
 

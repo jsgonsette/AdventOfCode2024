@@ -1,6 +1,7 @@
 mod coordinates;
 mod threads;
 mod topo_sort;
+mod cycle_detector;
 
 use std::fmt::Display;
 use anyhow::*;
