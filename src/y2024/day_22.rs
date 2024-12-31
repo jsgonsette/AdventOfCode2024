@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use anyhow::*;
 use itertools::{Itertools};
 use crate::{Solution};
@@ -20,12 +19,8 @@ const TEST_2: &str = "\
 /// A sequence of 4 price increases
 type Sequence = (i8, i8, i8, i8);
 
-/// Best total price for each [Sequence]
-type SequencePrice = HashMap<Sequence, u32>;
-
 /// Banana sell price
 type Price = u8;
-
 
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
@@ -87,6 +82,16 @@ fn sequence_4_it(seed: usize) -> impl Iterator<Item=(Price, Sequence)> {
     price_it.zip(four_seq_increase_it)
 }
 
+/// Each of the four sequence items are going from -9 to 9 (19 possible values).
+/// Each sequence can thus be transformed into a unique number between 0 and 19^4=130321
+fn sequence_to_index (sequence: &Sequence) -> usize {
+
+    (sequence.0 as usize + 9) * 6859 +
+        (sequence.1 as usize + 9) * 361 +
+        (sequence.2 as usize + 9) * 19 +
+        (sequence.3 as usize + 9)
+}
+
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
@@ -110,26 +115,30 @@ fn part_b (content: &[&str]) -> Result<usize> {
     let seeds = load_seeds(content)?;
 
     // Save the best price for each sequence, and the best price overall
-    let mut best_prices = SequencePrice::new();
+    // An array is much faster than a HashMap and is usable here given the low number of
+    // possible sequences.
+    let mut best_prices = vec![0u32; 19*19*19*19];
     let mut best_price = 0;
 
-    // For each monkey seed
-    for seed in seeds {
+    // To keep track of sequences we have already seen (we can sell only once).
+    // An array is much faster than a HashSet and is usable here given the low number of
+    // possible sequences.
+    let mut seq_done = vec![u16::MAX; 19*19*19*19];
 
-        // Keep track of sequences we have already seen (we can sell only once)
-        let mut seq_dones = HashSet::<Sequence>::new();
+    // For each monkey seed
+    for (id, seed) in seeds.into_iter().enumerate() {
 
         // for each associated sequence
         for (price, sequence) in sequence_4_it(seed) {
 
             // Skip if seen already
-            if seq_dones.contains(&sequence) { continue; }
-            seq_dones.insert(sequence);
+            let seq_index = sequence_to_index(&sequence);
+            if seq_done[seq_index] == id as u16 { continue }
+            seq_done[seq_index] = id as u16;
 
             // Increase the price of this sequence
-            let entry = best_prices.entry(sequence).or_insert(0);
-            *entry += price as u32;
-            best_price = best_price.max(*entry);
+            best_prices[seq_index] += price as u32;
+            best_price = best_prices[seq_index].max(best_price);
         }
     }
 
