@@ -13,7 +13,8 @@ use std::io::{BufRead, BufReader};
 use std::ops::RangeBounds;
 use std::result::Result::Ok;
 use std::time::Duration;
-use crate::benchmark::{benchmark_year, make_svg};
+use itertools::Itertools;
+use crate::benchmark::{benchmark_year, make_svg, BenchmarkResult};
 use crate::y2023::Y2023;
 
 pub use tools::{Cell, CellArea};
@@ -50,14 +51,31 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 17..18);
+    solve_year(Y2022, 16..17);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 25..25);
+    solve_year(Y2024, 22..23);
 
-    //let result = benchmark_year(&Y2024, 100);
-    //make_svg(&result);
+    let result = benchmark_year(&Y2024, 100);
+    print_benchmark_result(&result);
+    make_svg(&result);
 
     Ok(())
+}
+
+fn print_benchmark_result (benchmark_result: &BenchmarkResult) {
+
+    let web = "https://adventofcode.com/2024/day/";
+    let source = "./src/y2024/day_";
+
+    let template = "| {}  | [Historian Hysteria](https://adventofcode.com/2024/day/{})      | [day_01.rs](./src/y2024/day_{}.rs) | {}      |";
+    for key in benchmark_result.keys().sorted() {
+        if let Some(Ok(duration)) = benchmark_result.get(key) {
+
+            let formatted = format!("{:.1$}", duration.as_micros() as f64 / 1000.0, 3);
+            println!("| {:02}  | [Historian Hysteria](https://adventofcode.com/2024/day/{})      | [day_{:02}.rs](./src/y2024/day_{:02}.rs) | {}      |",
+                key, key, key, key, formatted);
+        }
+    }
 }
 
 /// Solve for all the days of the provided `year` module.
