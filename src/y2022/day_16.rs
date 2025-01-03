@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use anyhow::*;
 use itertools::Itertools;
-use nalgebra::max;
 use crate::{Solution};
 use crate::tools::{compute_all_pair_distances};
 
@@ -39,33 +38,7 @@ type ValveIndex = usize;
 
 /// Bit vector of closed valves
 #[derive(Debug, Copy, Clone)]
-struct ClosedValves (u128);
-
-///
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum Where {
-    Disabled,
-    Room (ValveIndex),
-    MovingTo (ValveIndex, u32),
-}
-
-#[derive(Debug, Clone, Copy)]
-struct ProcessStateDuo {
-
-    you: Where,
-
-    elephant: Where,
-
-    /// Total pressure delivered until the end of the allocated time given the valves opened so far
-    total_pressure: u32,
-
-    /// Time left (minutes)
-    time_left: u32,
-
-    /// Valves that are still to be opened
-    to_open: ClosedValves,
-}
-
+struct ClosedValves (u64);
 
 /// Models the current state of the investigation process
 #[derive(Debug, Clone, Copy)]
@@ -83,8 +56,6 @@ struct ProcessState {
     /// Valves that are still to be opened
     to_open: ClosedValves,
 }
-
-
 
 impl ClosedValves {
 
@@ -140,79 +111,12 @@ impl ProcessState {
     }
 }
 
-impl ProcessStateDuo {
-    fn new(valves: &[Valve], total_time: u32) -> ProcessStateDuo {
-
-        // Index of the starting valve
-        let valve_start = valves.iter().find_position(|&valve| valve.name == "AA");
-
-        // set a '1' for every valve we try to open (we ignore those with zero flow). lsb <=> valve 0
-        let closed = valves.iter().rev().fold(
-            0,
-            |acc, valve| if valve.flow > 0 { (acc << 1) +1 } else { acc << 1 }
-        );
-
-        ProcessStateDuo {
-            you: Where::Room(valve_start.unwrap().0),
-            elephant: Where::MovingTo(valve_start.unwrap().0, 0),
-            total_pressure: 0,
-            time_left: total_time,
-            to_open: ClosedValves(closed),
-        }
-
-    }
-
-    /// Resolve the case where you and the elephant are in transit, by determining which one
-    /// arrives first and how long it takes. Time left is reduced by this amount and
-    /// the corresponding action is changed from [Where::MovingTo] to [Where::Room].
-    /// In any other case, the state is left unchanged.
-    ///
-    /// ## Rem
-    /// When both should arrive at the same time, *you* becomes `Where::Room(_)` while the
-    /// *elephant* becomes `Where::MovingTo(_, 0)`. Therefore, this function cannot yield
-    /// a state where both are in the state `Where::Room(_)`.
-    fn resolve_arrival (&self) -> Self {
-
-        match (self.you, self.elephant) {
-
-            // When both are moving, resolve which one arrives first
-            (Where::MovingTo(valve_0, time_0), Where::MovingTo(valve_1, time_1)) => {
-                let time_step = time_0.min (time_1);
-                ProcessStateDuo {
-                    you:       if time_0 <= time_1 { Where::Room(valve_0) } else { Where::MovingTo(valve_0, time_0-time_step) },
-                    elephant:  if time_1 < time_0 { Where::Room(valve_1) } else { Where::MovingTo(valve_1, time_1-time_step) },
-                    time_left: self.time_left - time_step,
-                    .. *self
-                }
-            },
-
-            (Where::MovingTo(valve, time), Where::Disabled) => {
-                ProcessStateDuo {
-                    you:       Where::Room(valve),
-                    time_left: self.time_left - time,
-                    .. *self
-                }
-            },
-
-            (Where::Disabled, Where::MovingTo(valve, time)) => {
-                ProcessStateDuo {
-                    elephant: Where::Room(valve),
-                    time_left: self.time_left - time,
-                    .. *self
-                }
-            },
-
-            _ => self.clone(),
-        }
-    }
-}
-
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
 /// Compare two valves for ordering. Most important valves come first (highest flow).
-/// Zero-flow valves are put at the end, among which the starting valve AA comes first.
+/// Zero-flow valves are put at the end
 fn compare_valves (v1: &Valve, v2: &Valve) -> Ordering {
     v2.flow.cmp(&v1.flow)
         .then(v1.name.cmp(&v2.name))
@@ -253,88 +157,22 @@ fn compute_distance_matrix (valves: &[Valve]) -> DistanceMatrix {
     compute_all_pair_distances(valves.len(), fn_adjacency)
 }
 
-fn solve_sequence_duo (state: &ProcessStateDuo, valves: &[Valve], distances: &DistanceMatrix) -> u32 {
-
-    // To track the max pressure released among all the solutions
-    let mut max_pressure = 0;
-    let mut steps = 0;
-
-    // DFS queue, starting in the provided `state`
-    let mut dfs_queue = vec! [*state];
-    while let Some (state) = dfs_queue.pop() {
-
-        steps += 1;
-
-        // The next action is for the one that is not in transit.
-        // There can only be one (see function `resolve_arrival`)
-        let (valve_start, where_other) = match (state.you, state.elephant) {
-            (Where::Room(valve), o@Where::Disabled)       => (valve, o),
-            (Where::Room(valve), o@Where::MovingTo(_, _)) => (valve, o),
-            (o@Where::MovingTo(_, _), Where::Room(valve)) => (valve, o),
-            (o@Where::Disabled,       Where::Room(valve)) => (valve, o),
-            _ => unreachable!()
-        };
-
-        // Each unopened valve in this `state` is a potential action ...
-        let dfs_len = dfs_queue.len();
-        for valve_index in state.to_open.iter_closed() {
-
-            // ... which requires some time to execute (move + open),
-            let required_time = distances[valve_start][valve_index] + 1;
-            if required_time >= state.time_left { continue }
-
-            // This yields this `new_state`. We don't update the `time_left` now!
-            // We don't bother to differentiate between you and the elephant.
-            // `total_pressure` and valve closure are anticipated (nothing can prevent the action to fail).
-            let time_left = state.time_left - required_time;
-            let new_state = ProcessStateDuo {
-                you: Where::MovingTo(valve_index, required_time),
-                elephant: where_other,
-                total_pressure: state.total_pressure + valves[valve_index].flow * time_left,
-                time_left: state.time_left,
-                to_open: state.to_open.close(valve_index),
-            };
-
-            // Track the max pressure among all the investigated solutions.
-            max_pressure = max_pressure.max (new_state.total_pressure);
-
-            // Schedule processing of the new state if some valves are still closed and if
-            // the heuristic indicates potential progress
-            if new_state.to_open.0 > 0 &&
-                heuristic_duo (new_state, valves, distances, valve_index) > max_pressure {
-                dfs_queue.push(new_state.resolve_arrival());
-            }
-        }
-
-        // Case where you or the elephant could not do anything: we disable the protagonist,
-        // but we propagate the state as the other one can maybe still do something
-        if dfs_queue.len() == dfs_len {
-            if where_other != Where::Disabled {
-                let new_state = ProcessStateDuo {
-                    you: Where::Disabled,
-                    elephant: where_other,
-                    .. state
-                };
-                dfs_queue.push(new_state.resolve_arrival());
-            }
-        }
-
-    }
-
-    println!("Part B Steps: {}", steps);
-
-    max_pressure
-}
-
-fn solve_sequence (state: &ProcessState, valves: &[Valve], distances: &DistanceMatrix) -> u32 {
-
-    let mut max_pressure = 0;
-    let mut steps = 0;
+/// Find the best sequence with a *Branch and Bound* algorithm, implemented with a DFS queue.
+/// Given an initial `state`, the `valves` input and the `distance` matrix, explores the
+/// different possible sequences and drop them early when not promising.
+///
+/// A sequence (and all its children) is dropped when it *most optimistic bound* is below
+/// *the best solution* so far. The optimistic bound is given by a [heuristic]. The best solution
+/// is tracked and given by the function `f_save_score_and_get_high`.
+fn solve_sequence<F> (
+    state: &ProcessState,
+    valves: &[Valve],
+    distances: &DistanceMatrix,
+    mut f_save_score_and_get_high: F
+) where F: FnMut(ClosedValves, u32) -> u32 {
 
     let mut dfs_queue = vec! [*state];
     while let Some (state) = dfs_queue.pop() {
-
-        steps += 1;
 
         // Each unopened valve in this tate is a potential action ...
         for valve_index in state.to_open.iter_closed() {
@@ -343,7 +181,7 @@ fn solve_sequence (state: &ProcessState, valves: &[Valve], distances: &DistanceM
             let required_time = distances [state.valve][valve_index] +1;
             if required_time >= state.time_left { continue }
 
-            // and that yields this `new_state`
+            // and that yields this `new_state`. Total released pressure is anticipated,
             let time_left = state.time_left - required_time;
             let new_state = ProcessState {
                 valve: valve_index,
@@ -353,25 +191,22 @@ fn solve_sequence (state: &ProcessState, valves: &[Valve], distances: &DistanceM
             };
 
             // Track the max pressure among all the investigated solutions.
-            max_pressure = max_pressure.max (new_state.total_pressure);
+            let highest_pressure =
+                f_save_score_and_get_high (new_state.to_open, new_state.total_pressure);
 
             // Schedule processing of the new state if some valves are still closed and if
-            // the heuristic indicates potential progress
+            // the heuristic indicates potential progress against the best solution so far
             if new_state.to_open.0 > 0 &&
-                heuristic(new_state, valves, distances) > max_pressure {
+                heuristic(new_state, valves, distances) > highest_pressure {
                 dfs_queue.push(new_state)
             };
         }
     }
-
-    println!("Part A tSteps: {}", steps);
-
-    max_pressure
 }
 
 /// This function returns an *upper bound* of the total pressure we can reach
 /// by opening the `valves` given the current `state`. This bound is computed by assuming
-/// that each remaining closed valve can be reached in 1minute.
+/// that each remaining closed valve can be reached swiftly in sequence.
 fn heuristic (mut state: ProcessState, valves: &[Valve], distances: &DistanceMatrix) -> u32 {
 
     let required_time = state.to_open.iter_closed().map(
@@ -389,23 +224,6 @@ fn heuristic (mut state: ProcessState, valves: &[Valve], distances: &DistanceMat
     state.total_pressure
 }
 
-fn heuristic_duo (mut state: ProcessStateDuo, valves: &[Valve], distances: &DistanceMatrix, valve_index: ValveIndex) -> u32 {
-
-    let required_time = state.to_open.iter_closed().map(
-        |valve_index| distances[valve_index][valve_index]
-    ).min().unwrap() +1;
-
-    // Iterate on all the remaining closed valves, from the most interesting one to the least.
-    // We assume we can move to each of those valve in one step and close it (2 minutes)
-    for valve_index in state.to_open.iter_closed() {
-        if state.time_left <= 2 { break }
-        state.time_left -= 2;
-        state.total_pressure += valves[valve_index].flow * state.time_left;
-    }
-
-    state.total_pressure
-}
-
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
@@ -416,12 +234,18 @@ fn part_a (content: &[&str]) -> Result<usize> {
     // Compute all pair distances
     let distances = compute_distance_matrix(&valves);
 
+    // Simple function to track the best solution investigated by function `solve_sequence`
+    let mut highest_pressure = 0;
+    let f_save_score_and_get_high = |_closed_valves: ClosedValves, score: u32| {
+        highest_pressure = highest_pressure.max (score);
+        highest_pressure
+    };
+
     // Find the best sequence's max pressure
     let start_state = ProcessState::new(&valves, 30);
-    println!("Num valves to open: {}", start_state.to_open.num_closed());
-    let max_pressure = solve_sequence(&start_state, &valves, &distances);
+    solve_sequence(&start_state, &valves, &distances, f_save_score_and_get_high);
 
-    Ok(max_pressure as usize)
+    Ok(highest_pressure as usize)
 }
 
 /// Solve second part of the puzzle
@@ -434,10 +258,42 @@ fn part_b (content: &[&str]) -> Result<usize> {
     // Compute all pair distances
     let distances = compute_distance_matrix(&valves);
 
-    let start_state = ProcessStateDuo::new(&valves, 26);
-    let max_pressure = solve_sequence_duo(&start_state, &valves, &distances);
+    // Initial state and number of valves to close (hopefully, not so many)
+    let start_state = ProcessState::new(&valves, 26);
+    let num_valves_to_close = start_state.to_open.num_closed();
+    let num_sequences = 2usize.pow(num_valves_to_close);
+    let mask = num_sequences -1;
 
-    Ok(max_pressure as usize)
+    // We keep track of one score (total pressure released) for each
+    // possible combination of open/close valves
+    let mut all_seq_scores = vec! [0; num_sequences];
+    let f_save_score_and_get_high = |closed_valves: ClosedValves, score: u32| {
+        let seq_index = closed_valves.0 as usize;
+        all_seq_scores [seq_index] = all_seq_scores [seq_index].max (score);
+        all_seq_scores [seq_index]
+    };
+
+    // Solve for each combination of opened valves and sort them from lowest to highest scores
+    solve_sequence(&start_state, &valves, &distances, f_save_score_and_get_high);
+
+    let mut sorted_seq: Vec<(usize, u32)> = all_seq_scores.iter().copied ().enumerate().collect();
+    sorted_seq.sort_unstable_by_key(|(_idx, score)| *score);
+
+    // Search the best among 2 complementary sequences (no overlap of opened valves)
+    let mut highest_pressure = 0;
+    for (seq_1, score_1) in sorted_seq.iter().rev() {
+        for (seq_2, score_2) in sorted_seq.iter().rev() {
+
+            // Because scores are sorted, we can exit early
+            if *score_1 + *score_2 < highest_pressure { break; }
+            if !(*seq_1) & !(*seq_2) & mask == 0 {
+                highest_pressure = highest_pressure.max (*score_1 + *score_2);
+                break;
+            }
+        }
+    }
+
+    Ok (highest_pressure as usize)
 }
 
 pub fn day_16 (content: &[&str]) -> Result <(Solution, Solution)> {
@@ -446,7 +302,7 @@ pub fn day_16 (content: &[&str]) -> Result <(Solution, Solution)> {
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 1707);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
