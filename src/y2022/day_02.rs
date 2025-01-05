@@ -11,8 +11,10 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> anyhow::Result<usize> {
 
+    // Translate directly an input to its corresponding score
     let score: u32 = content.iter().map(|row| {
         match row {
             r if *r == "A X" => 1 + 3,  // Rock Rock
@@ -33,8 +35,10 @@ fn part_a (content: &[&str]) -> anyhow::Result<usize> {
     Ok(score as usize)
 }
 
+/// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> anyhow::Result<usize> {
 
+    // Translate directly an input to its corresponding score
     let score: u32 = content.iter().map(|row| {
         match row {
             r if *r == "A X" => 3 + 0,  // Rock Loose Scissors

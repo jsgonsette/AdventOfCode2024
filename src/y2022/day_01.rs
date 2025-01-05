@@ -23,10 +23,11 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+/// Returns a vector where each item is the total number of calories carried out by an elf.
 fn group_by_elves (content: &[&str]) -> Vec<Calories> {
 
     let mut sum = 0;
-    let terminator = std::iter::once (&"");
+    let terminator = std::iter::once (&""); // To ensure we collect the last elf
 
     let elves: Vec<u32> = content.iter().chain (terminator).filter_map(| &row | {
         match row.is_empty() {
