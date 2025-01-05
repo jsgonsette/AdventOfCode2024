@@ -1,10 +1,9 @@
-use std::cmp::{Ordering, PartialEq};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use anyhow::*;
-use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
+use num::Integer;
 use crate::Solution;
-use crate::tools::{Coo, RowReader};
+use crate::tools::{Coo, IntInterval, IntIntervals, RowReader};
 
 const TEST: &str = "\
 Sensor at x=2, y=18: closest beacon is at x=-2, y=15
@@ -28,161 +27,16 @@ struct Pair {
     beacon: Coo,
 }
 
-/// Implements the interval [a, b] with Natural numbers. Bounds are inclusive.
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct IntInterval(isize, isize);
-
-/// Implements a set (union) of disjoint intervals
-#[derive(Debug, Clone)]
-struct IntIntervals {
-
-    /// Disjoint intervals, ordered from left to right
-    intervals: Vec<IntInterval>,
-}
-
-impl PartialOrd for IntInterval {
-
-    /// Partial comparison with other intervals.
-    /// The ordering returns `none` in case of overlap.
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.1 < other.0 { Some (Ordering::Less) }
-        else if self.0 > other.1 { Some (Ordering::Greater) }
-        else if *self == *other { Some (Ordering::Equal) }
-        else { None }
-    }
-}
-
-impl IntInterval {
-
-    fn from (x: isize, dist_y: isize, radius: isize) -> Option<Self> {
-        assert!(dist_y >= 0 && radius >= 1);
-        let half_width = radius - dist_y;
-
-        (half_width >= 0).then(
-            || IntInterval(x - half_width, x + half_width)
-        )
-    }
-
-    /// Returns `true` if this interval overlaps with `other`
-    fn overlap_with (&self, other: &IntInterval) -> bool {
-        !(other.1 < self.0 || other.0 > self.1)
-    }
-
-    /// If this interval overlaps with `other`, then returns a single interval covering both of them.
-    fn union(&self, other: &IntInterval) -> Option<IntInterval> {
-        self.overlap_with(other).then_some(
-            IntInterval(self.0.min(other.0), self.1.max(other.1))
-        )
-    }
-
-    /// If this interval overlaps with `other`, then returns the interval common to both of them.
-    fn intersection(&self, other: &IntInterval) -> Option<IntInterval> {
-        self.overlap_with(other).then(||
-            IntInterval(self.0.max(other.0), self.1.min(other.1))
-        )
-    }
-}
-
-impl IntIntervals {
-
-    /// New empty set of intervals
-    fn new () -> Self {
-        IntIntervals { intervals: vec![] }
-    }
-
-    /// Returns the total length covered by the underlying intervals
-    fn length(&self) -> usize {
-        self.intervals.iter().map(|inter| (inter.1 - inter.0 +1) as usize).sum()
-    }
-
-    /// Returns `true` if x lays in one of the underlying intervals
-    fn contains(&self, x: isize) -> bool {
-        self.intervals.iter().any(|inter| inter.0 <= x && inter.1 >= x)
-    }
-
-    /// Add `interval` to this set, fusing it with existing elements as and when needed.
-    fn union_single(&mut self, interval: IntInterval) {
-
-        // Index of first part that is not strictly < than `interval`
-        let insertion_start = self.intervals.partition_point(
-            |other| *other < interval
-        );
-
-        // Index of first part strictly > than `interval`
-        let insertion_end = self.intervals [insertion_start..]
-            .iter()
-            .fold_while(insertion_start, |count, other| {
-                if interval.overlap_with(other) { Continue (count + 1) } else { Done (count) }
-            }).into_inner();
-
-        // Fuse everything between `insertion_start` and `insertion_end` with `interval`
-        let fused = self.intervals[insertion_start..insertion_end]
-            .iter()
-            .fold(interval, |fused, other| {
-                fused.union(other).unwrap()
-            });
-
-        // All the parts strictly > than `interval`
-        let tail: Vec<_> = self.intervals[insertion_end..].iter().copied().collect();
-
-        self.intervals.truncate(insertion_start);
-        self.intervals.push(fused);
-        self.intervals.extend(tail);
-    }
-
-    fn intersection (&self, other: &Self) -> Self {
-
-        // To skip elements of `other` when they could not possibly be part of the solution
-        let mut idx_other = 0;
-
-        // Iterate on each element of this interval. Each element can produce multiple
-        // intersections that are flatten together
-        let iter_it = self.intervals.iter().flat_map (|inter| {
-
-            // Compute an iterator yielding the intersection parts.
-            let (skipped, intersection) =
-                Self::intersection_single(inter, &other.intervals [idx_other..]);
-            idx_other += skipped;
-            intersection
-        });
-
-        IntIntervals {
-            intervals: iter_it.collect(),
-        }
-    }
-
-    /// Returns an iterator yielding intervals corresponding to the intersection of the
-    /// single interval `inter` with the vector `parts`
-    fn intersection_single<'a> (inter: &'a IntInterval, parts: &'a [IntInterval]) -> (usize, impl Iterator<Item = IntInterval> + 'a) {
-
-        let mut skipped = 0usize;
-
-        // Skip parts strictly below `inter`
-        let skip_before_it = parts
-            .iter()
-            .skip_while(move | &other_inter | {
-                if *other_inter < *inter { *(&mut skipped) += 1; true } else { false }
-            });
-
-        // Interact with each remaining overlapping elements
-        let common_it = skip_before_it
-            .take_while(move | other_inter | {
-                *(&mut skipped) += 1;
-                inter.overlap_with(other_inter)
-            });
-
-        (
-            skipped.saturating_sub(1), // We can skip every used part, except the last one
-            common_it.flat_map (| other_inter | inter.intersection(other_inter))
-        )
-    }
-}
-
 impl Pair {
 
     /// Returns the Manhattan distance between the beacon and its sensor
-    fn distance (&self) -> isize {
+    fn distance_to_beacon(&self) -> isize {
         (self.beacon.x - self.sensor.x).abs () + (self.beacon.y - self.sensor.y).abs()
+    }
+
+    /// Manhattan distance between the sensor and a given `coo`
+    fn distance_to (&self, coo: Coo) -> isize {
+        (coo.x - self.sensor.x).abs () + (coo.y - self.sensor.y).abs()
     }
 }
 
@@ -206,17 +60,23 @@ fn collect_device_pairs (content: &[&str]) -> Result<Vec<Pair>> {
     }).collect()
 }
 
+/// For a given row `row_y`, iterate on all the sensor-beacon pairs and build the coverage
+/// where the lost beacon cannot be. This coverage is modeled with [IntIntervals].
 fn compute_row_intervals (row_y: isize, pairs: &[Pair]) -> IntIntervals {
 
     // Process each beacon-device pair
     let mut intervals = IntIntervals::new();
     for pair in pairs.iter() {
 
-        // For each pair, we can construct an interval covering the positions where the beacon cannot be
-        let interval = IntInterval::from (
-            pair.sensor.x,
-            (pair.sensor.y - row_y).abs(),
-            pair.distance()
+        // For each pair, we can construct an interval covering the positions where
+        // the beacon cannot be on the row `row_y`
+        let x = pair.sensor.x;
+        let dist_y = (pair.sensor.y - row_y).abs();
+        let radius = pair.distance_to_beacon();
+
+        let half_width = radius - dist_y;
+        let interval = (half_width >= 0).then_some(
+            IntInterval(x - half_width, x + half_width)
         );
 
         // Fuse all those intervals together
@@ -226,6 +86,86 @@ fn compute_row_intervals (row_y: isize, pairs: &[Pair]) -> IntIntervals {
     }
 
     intervals
+}
+
+/// Given a diamond shape `#` at some `center` location and `radius`
+/// ((3,2) and 1 in the example below),
+/// this function returns the location of the **outside** top left diagonal edge of this diamond (`^`).
+/// This edge is given by:
+/// * the y-intercept of the diagonal (1 in this example)
+/// * the covering interval along x ((1-3) in this example)
+/// ```
+///  y
+///  |   ^
+///  |  ^#
+///  2 ^###
+///  |   #
+///  |
+///  +---3-- x
+/// ```
+fn diamond_outside_top_left (center: Coo, radius: usize) -> (isize, IntInterval) {
+
+    let y_outside_top = center.y + radius as isize +1;
+    let intercept = y_outside_top - center.x;
+    let x1 = center.x - radius as isize -1;
+    let x2 = center.x;
+
+    (intercept, IntInterval(x1, x2))
+}
+
+/// This function is similar to [diamond_outside_top_left],
+/// but returns the top right outside edge instead
+fn diamond_outside_top_right (center: Coo, radius: usize) -> (isize, IntInterval) {
+
+    let y_outside_top = center.y + radius as isize +1;
+    let intercept = y_outside_top + center.x;
+    let x2 = center.x + radius as isize +1;
+    let x1 = center.x;
+
+    (intercept, IntInterval(x1, x2))
+}
+
+/// This function is similar to [diamond_outside_top_left],
+/// but returns the bottom right outside edge instead
+fn diamond_outside_bottom_right (center: Coo, radius: usize) -> (isize, IntInterval) {
+
+    let y_outside_bottom = center.y - radius as isize -1;
+    let intercept = y_outside_bottom - center.x;
+    let x2 = center.x + radius as isize +1;
+    let x1 = center.x;
+
+    (intercept, IntInterval(x1, x2))
+}
+
+/// This function is similar to [diamond_outside_top_left],
+/// but returns the bottom left outside edge instead
+fn diamond_outside_bottom_left (center: Coo, radius: usize) -> (isize, IntInterval) {
+
+    let y_outside_bottom = center.y - radius as isize -1;
+    let intercept = y_outside_bottom + center.x;
+    let x1 = center.x - radius as isize -1;
+    let x2 = center.x;
+
+    (intercept, IntInterval(x1, x2))
+}
+
+/// Compute the unique coordinate (if any), resulting from the intersection between:
+/// * a line of equation y =  x + `b1` whose valid x values are given by `intervals_1`
+/// * a line of equation y = -x + `b2` whose valid x values are given by `intervals_2`
+fn orthogonal_intersection (
+    b1: isize,
+    intervals_1: &IntIntervals,
+    b2: isize,
+    intervals_2: &IntIntervals
+) -> Option<Coo> {
+
+    let _2x = b2 - b1;
+    _2x.is_even().then(|| {
+        let x = _2x / 2;
+        let y = x + b1;
+
+        (intervals_1.contains(x) && intervals_2.contains(x)).then_some(Coo::from((x, y)))
+    }).flatten()
 }
 
 /// Solve first part of the puzzle
@@ -248,19 +188,108 @@ fn part_a (content: &[&str], target_row: isize) -> Result<usize> {
     Ok(intervals.length() - beacon_on_rows.len ())
 }
 
-///     BBBB
-///     BBBB
-///     BBBB
-///   AABBBCCC
-///   AAAA.CCC
-///   AAADDDCC
-///      DDD
-///      DDD
+/// The second part of the puzzle is solved here by first noticing that there are not so many
+/// beacon-sensor pairs. this means it's better to iterate on this set than on the million rows.
+///
+/// Secondly, the lonely beacon must be squeezed between the edges of at least 4 diamond shapes
+/// (a diamond shape is the space where we know the beacon cannot be in. There is one such
+/// diamond by beacon-sensor pair.). For example, consider below 4 diamonds `A, B, C, D` and
+/// the lonely beacon `.` in between.
+///
+/// ```
+///       C
+///      CCCB
+///      ACBBB
+///     AAA.BD
+///    AAAAADDD
+///     AAADDDDD
+///      A  DDD
+/// ```
+///
+/// The outside edges of the diamonds can be described by the intercepts of orthogonal
+/// lines y = x +b or y = -x +b and by valid range values along those lines. We know that
+/// the beacon is along one of those edges. Therefore:
+///
+/// 1) Top-left edges with the same intercept are union in the same [IntIntervals], and the
+/// same can be done for the other edges.
+/// 2) By intersecting top-left and bottom right intervals that have the same intercept, we
+/// reduce the search space. Same for top-right and bottom left intervals.
+/// 3) We can further narrow down the search space by looking at the intersections of those
+/// orthogonal location intervals.
+fn part_b (content: &[&str]) -> Result<usize> {
+
+    let pairs = collect_device_pairs (content)?;
+
+    // Location candidates for the lost beacon. It must be stuck between (at least) 4 diamonds.
+    let mut tl_outside = HashMap::<isize, IntIntervals>::new ();
+    let mut tr_outside = HashMap::<isize, IntIntervals>::new ();
+    let mut bl_outside = HashMap::<isize, IntIntervals>::new ();
+    let mut br_outside = HashMap::<isize, IntIntervals>::new ();
+
+    // Each pair generates a diamond shape of some `center` and `radius`
+    for pair in pairs.iter() {
+        let center = pair.sensor;
+        let radius = pair.distance_to_beacon();
+
+        // Get a description of the outside top left edge of this diamond (intercept and interval).
+        // Then, union this interval with all other ones belonging to the same intercept.
+        // The content of those intervals are location candidates for the lost beacon.
+        let (intercept, interval) = diamond_outside_top_left(center, radius as usize);
+        tl_outside.entry(intercept).or_insert(IntIntervals::new()).union_single(interval);
+
+        // Same with top right, bottom left and bottom right edges.
+        let (intercept, interval) = diamond_outside_top_right(center, radius as usize);
+        tr_outside.entry(intercept).or_insert(IntIntervals::new()).union_single(interval);
+
+        let (intercept, interval) = diamond_outside_bottom_left(center, radius as usize);
+        bl_outside.entry(intercept).or_insert(IntIntervals::new()).union_single(interval);
+
+        let (intercept, interval) = diamond_outside_bottom_right(center, radius as usize);
+        br_outside.entry(intercept).or_insert(IntIntervals::new()).union_single(interval);
+    }
+
+    // For each intercept, compute the intersection between the top left and
+    // bottom right edges intervals. This reduces the number of potential locations
+    let it_diag_1 = tl_outside.iter ().filter_map(|(intercept, tl_interval)| {
+        br_outside.get (intercept).and_then(|br_interval| {
+            let common = tl_interval.intersection(br_interval);
+            (common.num_disjoints() > 0).then_some((*intercept, common))
+        })
+    });
+
+    // Same for top right and bottom left intervals
+    let it_diag_2 = tr_outside.iter ().filter_map(|(intercept, tr_interval)| {
+        bl_outside.get (intercept).and_then(|bl_interval| {
+            let common = tr_interval.intersection(bl_interval);
+            (common.num_disjoints () > 0).then_some((*intercept, common))
+        })
+    });
+
+    // tr/bl location candidates are orthogonal to the tl/br ones. As the lost beacon
+    // must belong to both, test all the possible intersections
+    for ((b1, intervals_1), (b2, intervals_2)) in it_diag_1.cartesian_product(it_diag_2) {
+
+        // Test the line y = x + b1 with the line y = -x + b2
+        if let Some (coo) = orthogonal_intersection(b1, &intervals_1, b2, &intervals_2) {
+
+            // If we have a candidate, we must now check this is not a false positive.
+            // For that we simply check the distance with all the beacon-sensor pairs.
+            if pairs.iter().all (
+                |pair| pair.distance_to(coo) > pair.distance_to_beacon()
+            ) {
+                let tuning_freq = coo.x * 4000000 + coo.y;
+                return Ok(tuning_freq as usize);
+            }
+        }
+    }
+
+    Err(anyhow!("no solution found"))
+}
 
 /// Solve second part of the puzzle, **slowly**.
-/// The idea here just consist in testing all the 4.10^6 possible rows, one by one,
-/// the same way as in part 1
-fn part_b (content: &[&str]) -> Result<usize> {
+/// The idea here just consists in testing all the 4.10^6 possible rows, one by one,
+/// the same way as in part 1. See function [part_b] for a better way.
+fn part_b_slow (content: &[&str]) -> Result<usize> {
 
     let pairs = collect_device_pairs (content)?;
 
@@ -268,9 +297,10 @@ fn part_b (content: &[&str]) -> Result<usize> {
         let intervals = compute_row_intervals(y, &pairs);
 
         // The lonely beacon must be surrounded by 2 plain intervals
-        if intervals.intervals.len() == 2 {
-            let x = intervals.intervals [0].1 +1;
+        if intervals.num_disjoints() == 2 {
+            let x = intervals [0].1 +1;
             let tuning_freq = x * 4000000 + y;
+            println!("Tuning frequency of {}: {}", x, y);
             return Ok(tuning_freq as usize);
         }
     }
@@ -281,21 +311,8 @@ fn part_b (content: &[&str]) -> Result<usize> {
 pub fn day_15 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST), 10).unwrap_or_default() == 26);
+    debug_assert!(part_b_slow (&split(TEST)).unwrap_or_default() == 56000011);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 56000011);
-
-    let mut a = IntIntervals::new();
-    let mut b = IntIntervals::new();
-
-    a.union_single(IntInterval (2, 6));
-    a.union_single(IntInterval (8, 10));
-    a.union_single(IntInterval (-1, 1));
-    b.union_single(IntInterval (-2, -1));
-    b.union_single(IntInterval (9, 10));
-    let mut c = a.intersection(&b);
-
-    println!("A: {:?}", a.intervals);
-    println!("B: {:?}", b.intervals);
-    println!("C: {:?}", c.intervals);
 
     let ra = part_a(content, 2000000)?;
     let rb = part_b(content)?;

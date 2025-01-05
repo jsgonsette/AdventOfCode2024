@@ -3,6 +3,7 @@ mod threads;
 mod topo_sort;
 mod cycle_detector;
 mod all_pair_distances;
+mod int_intervals;
 
 use std::fmt::Display;
 use anyhow::*;
@@ -12,6 +13,7 @@ use num::Integer;
 pub use coordinates::{Direction, Coo};
 pub use topo_sort::{TopoSortElement, topo_sort};
 pub use all_pair_distances::*;
+pub use int_intervals::{IntInterval, IntIntervals};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Sign { Positive, Negative }
