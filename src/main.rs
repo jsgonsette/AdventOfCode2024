@@ -51,14 +51,14 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 15..16);
+    solve_year(Y2022, 1..15);
     solve_year(Y2023, 10..10);
     solve_year(Y2024, 23..23);
 
-    let result = benchmark_year(&Y2022, 100);
+    /*let result = benchmark_year(&Y2022, 100);
     print_benchmark_result(&result);
     print_benchmark_result (&result);
-    make_svg(&result, "./out/perfo-2022.svg");
+    make_svg(&result, "./out/perfo-2022.svg");*/
 
     Ok(())
 }

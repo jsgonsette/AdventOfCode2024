@@ -12,6 +12,8 @@ mod day_18;
 mod day_17;
 mod day_16;
 mod day_15;
+mod day_01;
+mod day_03;
 
 use crate::{FnDay, Year};
 
@@ -23,8 +25,9 @@ impl Year for Y2022 {
 
     fn get_day_fn(&self, day: u32) -> Option<FnDay> {
         match day {
-            1 => None,
+            1 => Some (day_01::day_1),
             2 => Some (day_02::day_2),
+            3 => Some (day_03::day_3),
             4 => Some (day_04::day_4),
             5 => Some (day_05::day_5),
             15=> Some (day_15::day_15),

@@ -53,6 +53,7 @@ Here are the results I get to solve the two parts of the problems:
 
 | Day | Puzzle                                                           | Code                               | Perf. (ms) |
 |-----|------------------------------------------------------------------|------------------------------------|------------|
+| 01  | [Calorie Counting](https://adventofcode.com/2022/day/1)          | [day_01.rs](./src/y2022/day_01.rs) | 0.066      |
 | 02  | [Rock Paper Scissors](https://adventofcode.com/2022/day/2)       | [day_02.rs](./src/y2022/day_02.rs) | 0.095      |
 | 04  | [Camp Cleanup](https://adventofcode.com/2022/day/4)              | [day_04.rs](./src/y2022/day_04.rs) | 2.102      |
 | 05  | [Supply Stacks](https://adventofcode.com/2022/day/5)             | [day_05.rs](./src/y2022/day_05.rs) | 11.79      |
