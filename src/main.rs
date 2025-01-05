@@ -14,7 +14,7 @@ use std::ops::RangeBounds;
 use std::result::Result::Ok;
 use std::time::Duration;
 use itertools::Itertools;
-use crate::benchmark::{BenchmarkResult};
+use crate::benchmark::{benchmark_year, make_svg, BenchmarkResult};
 use crate::y2023::Y2023;
 
 pub use tools::{Cell, CellArea};
@@ -55,9 +55,10 @@ fn main() -> Result<()> {
     solve_year(Y2023, 10..10);
     solve_year(Y2024, 23..23);
 
-    /*let result = benchmark_year(&Y2024, 100);
+    let result = benchmark_year(&Y2022, 100);
     print_benchmark_result(&result);
-    make_svg(&result);*/
+    print_benchmark_result (&result);
+    make_svg(&result, "./out/perfo-2022.svg");
 
     Ok(())
 }

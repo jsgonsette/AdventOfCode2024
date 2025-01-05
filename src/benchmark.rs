@@ -71,7 +71,7 @@ fn trimmed_mean (data: &[Duration]) -> Duration {
     sorted.div(trimmed_data_len as u32)
 }
 
-pub fn make_svg (benchmark_result: &BenchmarkResult) {
+pub fn make_svg (benchmark_result: &BenchmarkResult, out_path: &str) {
 
     let svg_width = 1024;
     let svg_height = 512;
@@ -89,9 +89,10 @@ pub fn make_svg (benchmark_result: &BenchmarkResult) {
     let histo_width = svg_width-margin_left-4;
     let histo_height = svg_height-margin_top-margin_bottom;
 
-    let bar_width = histo_width as f32 / benchmark_result.len() as f32;
+    let num_bars = *benchmark_result.keys().max().unwrap();
+    let bar_width = histo_width as f32 / num_bars as f32;
     let space = bar_width / 2.0;
-    let new_width = histo_width as f32 + space * benchmark_result.len() as f32;
+    let new_width = histo_width as f32 + space * num_bars as f32;
     let bar_width = bar_width * histo_width as f32 / new_width;
     let space = space * histo_width as f32 / new_width;
 
@@ -216,6 +217,6 @@ pub fn make_svg (benchmark_result: &BenchmarkResult) {
 
     document = document.add(group);
 
-    svg::save("./out/perfo-2024.svg", &document).expect("Cannot save SVG file");
+    svg::save(out_path, &document).expect("Cannot save SVG file");
     println!("Fichier SVG généré : histogram.svg");
 }

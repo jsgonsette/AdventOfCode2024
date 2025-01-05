@@ -1,0 +1,117 @@
+<svg height="512" viewBox="0 0 1024 512" width="1024" xmlns="http://www.w3.org/2000/svg">
+<g>
+<rect fill="rgba(255, 255, 255, 0.6)" height="512" width="1024" x="0" y="0"/>
+<rect fill="rgb(200, 200, 200)" height="436" stroke="black" stroke-width="2" width="952" x="68" y="51"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="400">
+100 µs
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="400" y2="400"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="313">
+1 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="313" y2="313"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="226">
+10 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="226" y2="226"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="139">
+100 ms
+</text>
+<line stroke="rgb(150,150,150)" stroke-width="1" x1="68" x2="1020" y1="139" y2="139"/>
+<text dominant-baseline="middle" fill="black" font-size="15" font-weight="bold" text-anchor="end" x="64" y="51">
+1s
+</text>
+<linearGradient gradientUnits="userSpaceOnUse" id="gradient" x1="0%" x2="0%" y1="487" y2="51">
+<stop offset="0%" stop-color="rgb(30,30,100)"/>
+<stop offset="20%" stop-color="rgb(25,140,140)"/>
+<stop offset="40%" stop-color="rgb(50,180,80)"/>
+<stop offset="60%" stop-color="rgb(255,240,100)"/>
+<stop offset="80%" stop-color="rgb(255,70,10)"/>
+<stop offset="100%" stop-color="black"/>
+</linearGradient>
+<rect fill="url(#gradient)" height="326" id="day24" style="cursor: pointer;" width="25.386667" x="950" y="161">
+<animate attributeName="fill" begin="day24.mouseover" dur="0s" end="day24.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="962" y="500">
+24
+</text>
+<rect fill="url(#gradient)" height="210" id="day16" style="cursor: pointer;" width="25.386667" x="645" y="277">
+<animate attributeName="fill" begin="day16.mouseover" dur="0s" end="day16.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="657" y="500">
+16
+</text>
+<rect fill="url(#gradient)" height="314" id="day19" style="cursor: pointer;" width="25.386667" x="759" y="173">
+<animate attributeName="fill" begin="day19.mouseover" dur="0s" end="day19.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="771" y="500">
+19
+</text>
+<rect fill="url(#gradient)" height="85" id="day02" style="cursor: pointer;" width="25.386667" x="112" y="402">
+<animate attributeName="fill" begin="day02.mouseover" dur="0s" end="day02.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="124" y="500">
+2
+</text>
+<rect fill="url(#gradient)" height="247" id="day18" style="cursor: pointer;" width="25.386667" x="721" y="240">
+<animate attributeName="fill" begin="day18.mouseover" dur="0s" end="day18.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="733" y="500">
+18
+</text>
+<rect fill="url(#gradient)" height="202" id="day04" style="cursor: pointer;" width="25.386667" x="188" y="285">
+<animate attributeName="fill" begin="day04.mouseover" dur="0s" end="day04.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="200" y="500">
+4
+</text>
+<rect fill="url(#gradient)" height="95" id="day15" style="cursor: pointer;" width="25.386667" x="607" y="392">
+<animate attributeName="fill" begin="day15.mouseover" dur="0s" end="day15.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="619" y="500">
+15
+</text>
+<rect fill="url(#gradient)" height="423" id="day23" style="cursor: pointer;" width="25.386667" x="912" y="64">
+<animate attributeName="fill" begin="day23.mouseover" dur="0s" end="day23.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="924" y="500">
+23
+</text>
+<rect fill="url(#gradient)" height="158" id="day17" style="cursor: pointer;" width="25.386667" x="683" y="329">
+<animate attributeName="fill" begin="day17.mouseover" dur="0s" end="day17.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="695" y="500">
+17
+</text>
+<rect fill="url(#gradient)" height="6" id="day25" style="cursor: pointer;" width="25.386667" x="988" y="481">
+<animate attributeName="fill" begin="day25.mouseover" dur="0s" end="day25.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="1000" y="500">
+25
+</text>
+<rect fill="url(#gradient)" height="267" id="day05" style="cursor: pointer;" width="25.386667" x="226" y="220">
+<animate attributeName="fill" begin="day05.mouseover" dur="0s" end="day05.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="238" y="500">
+5
+</text>
+<rect fill="url(#gradient)" height="240" id="day21" style="cursor: pointer;" width="25.386667" x="835" y="247">
+<animate attributeName="fill" begin="day21.mouseover" dur="0s" end="day21.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="847" y="500">
+21
+</text>
+<rect fill="url(#gradient)" height="327" id="day20" style="cursor: pointer;" width="25.386667" x="797" y="160">
+<animate attributeName="fill" begin="day20.mouseover" dur="0s" end="day20.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="809" y="500">
+20
+</text>
+<rect fill="url(#gradient)" height="142" id="day22" style="cursor: pointer;" width="25.386667" x="874" y="345">
+<animate attributeName="fill" begin="day22.mouseover" dur="0s" end="day22.mouseout" from="#ec008c" to="#ec008c"/>
+</rect>
+<text dominant-baseline="middle" fill="black" font-size="15" text-anchor="middle" x="886" y="500">
+22
+</text>
+</g>
+</svg>
