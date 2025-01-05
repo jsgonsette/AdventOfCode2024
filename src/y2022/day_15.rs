@@ -70,15 +70,15 @@ impl IntInterval {
 
     /// If this interval overlaps with `other`, then returns a single interval covering both of them.
     fn union(&self, other: &IntInterval) -> Option<IntInterval> {
-        self.overlap_with(other).then(||
-            IntInterval(self.0.min(other.0), self.1.max(self.1))
+        self.overlap_with(other).then_some(
+            IntInterval(self.0.min(other.0), self.1.max(other.1))
         )
     }
 
     /// If this interval overlaps with `other`, then returns the interval common to both of them.
     fn intersection(&self, other: &IntInterval) -> Option<IntInterval> {
         self.overlap_with(other).then(||
-            IntInterval(self.0.max(other.0), self.1.min(self.1))
+            IntInterval(self.0.max(other.0), self.1.min(other.1))
         )
     }
 }
@@ -100,8 +100,8 @@ impl IntIntervals {
         self.intervals.iter().any(|inter| inter.0 <= x && inter.1 >= x)
     }
 
-    /// Add `interval` to this set.
-    fn add(&mut self, interval: IntInterval) {
+    /// Add `interval` to this set, fusing it with existing elements as and when needed.
+    fn union_single(&mut self, interval: IntInterval) {
 
         // Index of first part that is not strictly < than `interval`
         let insertion_start = self.intervals.partition_point(
@@ -132,9 +132,14 @@ impl IntIntervals {
 
     fn intersection (&self, other: &Self) -> Self {
 
+        // To skip elements of `other` when they could not possibly be part of the solution
         let mut idx_other = 0;
 
+        // Iterate on each element of this interval. Each element can produce multiple
+        // intersections that are flatten together
         let iter_it = self.intervals.iter().flat_map (|inter| {
+
+            // Compute an iterator yielding the intersection parts.
             let (skipped, intersection) =
                 Self::intersection_single(inter, &other.intervals [idx_other..]);
             idx_other += skipped;
@@ -146,16 +151,20 @@ impl IntIntervals {
         }
     }
 
+    /// Returns an iterator yielding intervals corresponding to the intersection of the
+    /// single interval `inter` with the vector `parts`
     fn intersection_single<'a> (inter: &'a IntInterval, parts: &'a [IntInterval]) -> (usize, impl Iterator<Item = IntInterval> + 'a) {
 
         let mut skipped = 0usize;
 
+        // Skip parts strictly below `inter`
         let skip_before_it = parts
             .iter()
             .skip_while(move | &other_inter | {
                 if *other_inter < *inter { *(&mut skipped) += 1; true } else { false }
             });
 
+        // Interact with each remaining overlapping elements
         let common_it = skip_before_it
             .take_while(move | other_inter | {
                 *(&mut skipped) += 1;
@@ -163,7 +172,7 @@ impl IntIntervals {
             });
 
         (
-            skipped.saturating_sub(1),
+            skipped.saturating_sub(1), // We can skip every used part, except the last one
             common_it.flat_map (| other_inter | inter.intersection(other_inter))
         )
     }
@@ -212,7 +221,7 @@ fn compute_row_intervals (row_y: isize, pairs: &[Pair]) -> IntIntervals {
 
         // Fuse all those intervals together
         if let Some (inter) = interval {
-            intervals.add(inter);
+            intervals.union_single(inter);
         }
     }
 
@@ -274,11 +283,19 @@ pub fn day_15 (content: &[&str]) -> Result <(Solution, Solution)> {
     debug_assert!(part_a (&split(TEST), 10).unwrap_or_default() == 26);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 56000011);
 
-   /* let a = IntIntervals::new();
-    let b = IntIntervals::new();
-    let c = a.intersection(&b);
+    let mut a = IntIntervals::new();
+    let mut b = IntIntervals::new();
 
-    println!("C: {:?}", c.intervals);*/
+    a.union_single(IntInterval (2, 6));
+    a.union_single(IntInterval (8, 10));
+    a.union_single(IntInterval (-1, 1));
+    b.union_single(IntInterval (-2, -1));
+    b.union_single(IntInterval (9, 10));
+    let mut c = a.intersection(&b);
+
+    println!("A: {:?}", a.intervals);
+    println!("B: {:?}", b.intervals);
+    println!("C: {:?}", c.intervals);
 
     let ra = part_a(content, 2000000)?;
     let rb = part_b(content)?;
