@@ -3,7 +3,8 @@ pub type GraphWeight = u32;
 /// Given a graph of `num_nodes`, implicitly given by the function `fn_adjacency`, returns
 /// a matrix giving all pair distances between the nodes.
 ///
-/// Given some node index, function *fn_adjacency* returns the neighbor node indexes and the edge weights.
+/// For some node index, function *fn_adjacency* returns the indexes of its neighbor nodes,
+/// along with the corresponding edge weights.
 ///
 /// This function uses the [Floyd–Warshall algorithm](https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm)
 /// algorithm

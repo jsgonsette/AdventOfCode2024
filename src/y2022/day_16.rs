@@ -146,7 +146,7 @@ fn collect_valves<'a> (content: &'a [&'a str]) -> Result<Vec<Valve<'a>>> {
 fn compute_distance_matrix (valves: &[Valve]) -> DistanceMatrix {
 
     // For some `node` index, iterates on the adjacent valves. For each of them we
-    // yield its index and the weight to get there (1 minute)
+    // yield its index and the weight to get there (1 minute in this puzzle)
     let fn_adjacency = |node: usize| {
         valves [node].edges.iter().map (|&adj_valve| {
             let adj_index = valves.iter().position (|valve| valve.name == adj_valve).unwrap();
@@ -279,14 +279,14 @@ fn part_b (content: &[&str]) -> Result<usize> {
     let mut sorted_seq: Vec<(usize, u32)> = all_seq_scores.iter().copied ().enumerate().collect();
     sorted_seq.sort_unstable_by_key(|(_idx, score)| *score);
 
-    // Search the best among 2 complementary sequences (no overlap of opened valves)
+    // Search the best duo among 2 complementary sequences (no overlap of opened valves)
     let mut highest_pressure = 0;
-    for (seq_1, score_1) in sorted_seq.iter().rev() {
-        for (seq_2, score_2) in sorted_seq.iter().rev() {
+    for (closed_1, score_1) in sorted_seq.iter().rev() {
+        for (closed_2, score_2) in sorted_seq.iter().rev() {
 
             // Because scores are sorted, we can exit early
             if *score_1 + *score_2 < highest_pressure { break; }
-            if !(*seq_1) & !(*seq_2) & mask == 0 {
+            if !(*closed_1) & !(*closed_2) & mask == 0 {
                 highest_pressure = highest_pressure.max (*score_1 + *score_2);
                 break;
             }
