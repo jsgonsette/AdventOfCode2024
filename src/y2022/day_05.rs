@@ -1,5 +1,4 @@
 use anyhow::*;
-use itertools::Itertools;
 use crate::Solution;
 use crate::tools::RowReader;
 
@@ -25,6 +24,7 @@ enum Crane {
 type Stack = Vec<char>;
 
 /// One move operation
+#[derive(Debug, Copy, Clone)]
 struct Move {
     from: usize,
     to: usize,
@@ -57,53 +57,36 @@ impl Stacks {
     fn get_top_row (&self) -> String {
         self.stacks.iter().map (
             |stack| stack.last().copied().unwrap_or_default()
-        ).join("")
+        ).collect ()
     }
 
-    /// Remove a crate from the stack `stack_idx`
-    fn pop (&mut self, stack_idx: usize) -> Result<char> {
-        let stack_from = self.stacks.get_mut(stack_idx).ok_or(anyhow!("invalid column {}", stack_idx))?;
-        stack_from.pop().ok_or(anyhow!("stack is empty"))
+    /// Execute a `mov` with the Crate Mover 9000
+    fn make_move_9000 (&mut self, mov: Move) {
+
+        let mut intermediate = vec! [];
+
+        // Extract the vector's top elements in reverse into the `intermediate` vector
+        let from = &mut self.stacks [mov.from -1];
+        let first = from.len() - mov.amount as usize;
+        intermediate.extend (from.drain (first..).rev ());
+
+        // Move the `intermediate` content on top of the destination stack
+        let to = &mut self.stacks [mov.to -1];
+        to.extend(intermediate);
     }
 
-    /// Remove `amount` crates from the stack `stack_idx`
-    fn pop_n (&mut self, stack_idx: usize, amount: usize) -> Result<Vec<char>> {
+    /// Execute a `mov` with the Crate Mover 9000
+    fn make_move_9001 (&mut self, mov: Move) {
+        let mut intermediate = vec! [];
 
-        let stack_from = self.stacks.get_mut(stack_idx).ok_or(anyhow!("invalid column {}", stack_idx))?;
-        if amount > stack_from.len() { bail!("Not enough elements"); }
+        // Extract the vector's top elements (same order) into the `intermediate` vector
+        let from = &mut self.stacks [mov.from -1];
+        let first = from.len() - mov.amount as usize;
+        intermediate.extend(from.drain(first..));
 
-        let split_idx = stack_from.len() - amount;
-        Ok(stack_from.split_off(split_idx))
-    }
-
-    /// Push one crate on top of the stack `stack_idx`
-    fn push (&mut self, stack_idx: usize, item: char) -> Result<()> {
-        let stack_to = self.stacks.get_mut(stack_idx).ok_or(anyhow!("invalid column {}", stack_idx))?;
-        Ok(stack_to.push(item))
-    }
-
-    /// Push multiple crates (as given by `items)` on top of the stack `stack_idx`
-    fn push_n (&mut self, stack_idx: usize, items: &[char]) -> Result<()> {
-        let stack_to = self.stacks.get_mut(stack_idx).ok_or(anyhow!("invalid column {}", stack_idx))?;
-        Ok(stack_to.extend(items))
-    }
-
-    /// Execute a move crate by crate
-    fn make_move_9000(&mut self, mov: Move) -> Result<()> {
-        for _ in 0..mov.amount {
-            let item = self.pop(mov.from -1)?;
-            self.push(mov.to -1, item)?;
-        }
-
-        Ok(())
-    }
-
-    /// Execute a combo move
-    fn make_move_9001(&mut self, mov: Move) -> Result<()> {
-        let items = self.pop_n(mov.from -1, mov.amount as usize)?;
-        self.push_n(mov.to -1, &items)?;
-
-        Ok(())
+        // Move the `intermediate` content on top of the destination stack
+        let to = &mut self.stacks [mov.to -1];
+        to.extend(intermediate);
     }
 
     /// Instantiate the `stack_idx`'th [Stack] of crates, given the head of the puzzle file.
@@ -171,9 +154,12 @@ fn solve (content: &[&str], crane: Crane)-> Result<String> {
     // Perform the moves
     for mov in get_move_it(&content [crates.len()+1..]) {
 
+        let mov = mov?;
+        if mov.from < 1 || mov.to > stacks.stacks.len() { bail!("Invalid move {:?}", mov); }
+
         match crane {
-            Crane::CrateMover9000 => { stacks.make_move_9000(mov?)?; }
-            Crane::CrateMover9001 => { stacks.make_move_9001(mov?)?; }
+            Crane::CrateMover9000 => { stacks.make_move_9000 (mov); }
+            Crane::CrateMover9001 => { stacks.make_move_9001 (mov); }
         }
     }
 
