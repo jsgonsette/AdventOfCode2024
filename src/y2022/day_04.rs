@@ -15,10 +15,13 @@ const TEST: &str = "\
 struct Range (u32, u32);
 
 impl Range {
+
+    /// Return `true` if `other` is completely contained in this range
     fn is_contained_in (&self, other: &Self) -> bool {
         self.0 >= other.0 && self.1 <= other.1
     }
 
+    /// Return `true` if `other` overlaps with this range
     fn overlap (&self, other: &Self) -> bool {
         self.1 >= other.0 && self.0 <= other.1
     }
@@ -28,46 +31,44 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-fn read_ranges (row: &str) -> Result<(Range, Range)> {
+/// Iterate on each pair of [Range] at each row of the puzzle file `content`
+fn get_range_it<'a> (content: &'a [&'a str]) -> impl Iterator<Item = Result<(Range, Range)>> + 'a {
 
     let mut reader = RowReader::new (false);
-    let ranges: [usize; 4] = reader.process_row_fix(row)
-        .ok_or(anyhow!("Error reading line {row}"))?;
+    content.iter().map (move |row| {
+        let range_numbers: Vec<u32> = reader.iter_row::<u32>(row).collect();
+        let left = Range (range_numbers [0], range_numbers [1]);
+        let right = Range (range_numbers [2], range_numbers [3]);
 
-    let left = Range (ranges [0] as u32, ranges [1] as u32);
-    let right = Range (ranges [2] as u32, ranges [3] as u32);
-    Ok((left, right))
+        Ok((left, right))
+    })
 }
 
-fn part_a (content: &[&str]) -> anyhow::Result<usize> {
+fn part_a (content: &[&str]) -> Result<usize> {
 
     let mut count = 0;
+    for result in get_range_it(content) {
 
-    for row in content.iter() {
-        let (left_range, right_range) = read_ranges(row)?;
-        if left_range.is_contained_in(&right_range) || right_range.is_contained_in(&left_range) {
-            count += 1;
-        }
+        let (left, right) = result?;
+        if left.is_contained_in(&right) || right.is_contained_in(&left) { count += 1 }
     }
 
     Ok(count)
 }
 
-fn part_b (content: &[&str]) -> anyhow::Result<usize> {
+fn part_b (content: &[&str]) -> Result<usize> {
 
     let mut count = 0;
+    for result in get_range_it(content) {
 
-    for row in content.iter() {
-        let (left_range, right_range) = read_ranges(row)?;
-        if left_range.overlap(&right_range) {
-            count += 1;
-        }
+        let (left, right) = result?;
+        if left.overlap(&right) { count += 1 }
     }
 
     Ok(count)
 }
 
-pub fn day_4(content: &[&str]) -> anyhow::Result<(Solution, Solution)> {
+pub fn day_4(content: &[&str]) -> Result<(Solution, Solution)> {
 
     debug_assert!(part_a(&split(TEST)).unwrap_or_default() == 2);
     debug_assert!(part_b(&split(TEST)).unwrap_or_default() == 4);

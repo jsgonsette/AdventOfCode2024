@@ -86,10 +86,10 @@ impl RowReader {
 
     /// Process the next ASCII character `byte` and optionally yield a number.
     fn process_byte(&mut self, byte: u8) -> Option<isize> {
-        match byte as char  {
-            '0' ..= '9' => {
+        match byte {
+            b'0' ..= b'9' => {
                 let current = self.built_number.unwrap_or_default();
-                self.built_number = Some(current*10 + (byte - '0' as u8) as usize);
+                self.built_number = Some(current*10 + (byte - b'0') as usize);
                 None
             },
             _ => {
@@ -101,9 +101,9 @@ impl RowReader {
                 );
                 self.built_number = None;
 
-                self.sign = match byte as char {
-                    '-' => Sign::Negative,
-                    _   => Sign::Positive,
+                self.sign = match byte {
+                    b'-' => Sign::Negative,
+                    _    => Sign::Positive,
                 };
 
                 out
