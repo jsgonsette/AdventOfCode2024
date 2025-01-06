@@ -1,6 +1,7 @@
 use anyhow::*;
 use itertools::Itertools;
 use crate::Solution;
+use crate::tools::RowReader;
 
 const TEST: &str = "\
 ....[D]
@@ -37,6 +38,9 @@ struct Stacks {
 }
 
 impl Stacks {
+
+    /// Given the raw top lines `crates` of the puzzle file content, instantiate the different
+    /// stacks of crates.
     fn new(crates: &[&str]) -> Result<Stacks> {
 
         let num_stacks = Self::get_num_stacks(crates)?;
@@ -103,7 +107,7 @@ impl Stacks {
     }
 
     /// Instantiate the `stack_idx`'th [Stack] of crates, given the head of the puzzle file.
-    /// Top most crate is as the end of the vector.
+    /// Top most crate is at the end of the vector.
     fn init_stack_of_crates(crates: &[&str], stack_idx: usize) -> Stack {
 
         let sample_crate_name = |x: usize, y: usize|-> Option<char> {
@@ -120,8 +124,10 @@ impl Stacks {
         (0 .. height).rev ().flat_map(|y| sample_crate_name (x, y)).collect()
     }
 
-    /// Determine the number of stacks from the head of the puzzle file
+    /// Determine the number of stacks from the head of the puzzle file.
     fn get_num_stacks (crates: &[&str]) -> Result<u32> {
+
+        // Read the last number written below the stacks schema
         let height = crates.len() -1;
         let num_stacks = crates [height].trim().as_bytes().last().ok_or(anyhow!("Invalid crates"))?;
         let num_stacks = (*num_stacks as char).to_digit(10).ok_or(anyhow!("Invalid crates"))?;
@@ -134,20 +140,20 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-/// Read one move operation from a single row of the puzzle file content
-fn extract_move (row: &str) -> Result<Move> {
+/// Return an iterator on the moves defined in the puzzle file content. This content
+/// is given by `rows` and corresponds to the second part of the file.
+fn get_move_it<'a> (rows: &'a[&'a str]) -> impl Iterator<Item = Result<Move>> + '_ {
 
-    let error = || { anyhow!("Invalid row: {}", row) };
+    let mut reader = RowReader::new(false);
 
-    let tokens: Vec<_> = row.split(' ').collect();
-    let amount = tokens.get(1).ok_or(error ())?.parse::<u32>()?;
-    let from = tokens.get(3).ok_or(error ())?.parse::<usize>()?;
-    let to = tokens.get(5).ok_or(error ())?.parse::<usize>()?;
+    rows.iter().map (move |row| {
+        let raw_move: Vec<u32> = reader.iter_row::<u32>(row).collect();
 
-    Ok(Move {
-        from,
-        to,
-        amount,
+        Ok(Move {
+            from: raw_move [1] as usize,
+            to: raw_move [2] as usize,
+            amount: raw_move [0],
+        })
     })
 }
 
@@ -162,13 +168,12 @@ fn solve (content: &[&str], crane: Crane)-> Result<String> {
     // Build the stacks of crates
     let mut stacks = Stacks::new(&crates)?;
 
-    // Make the moves
-    for row in content.iter().skip(crates.len()+1) {
-        let mov = extract_move(row)?;
+    // Perform the moves
+    for mov in get_move_it(&content [crates.len()+1..]) {
 
         match crane {
-            Crane::CrateMover9000 => { stacks.make_move_9000(mov)?; }
-            Crane::CrateMover9001 => { stacks.make_move_9001(mov)?; }
+            Crane::CrateMover9000 => { stacks.make_move_9000(mov?)?; }
+            Crane::CrateMover9001 => { stacks.make_move_9001(mov?)?; }
         }
     }
 
