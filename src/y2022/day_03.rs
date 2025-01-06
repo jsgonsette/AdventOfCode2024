@@ -57,18 +57,25 @@ fn part_a (content: &[&str]) -> Result<usize> {
 }
 
 /// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
+fn part_b (content: &[&str]) -> Result<usize> {
 
-    Ok(0)
+    let priorities = content.chunks_exact(3).map (| group | {
+        let a = to_rucksack(group [0]);
+        let b = to_rucksack(group [1]);
+        let c = to_rucksack(group [2]);
+        to_priority(a & b & c)
+    }).sum ();
+
+    Ok(priorities)
 }
 
 pub fn day_3 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 157);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 70);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
