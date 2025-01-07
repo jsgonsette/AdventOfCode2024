@@ -15,6 +15,8 @@ mod day_15;
 mod day_01;
 mod day_03;
 mod day_06;
+mod day_07;
+mod day_08;
 
 use crate::{FnDay, Year};
 
@@ -32,6 +34,8 @@ impl Year for Y2022 {
             4 => Some (day_04::day_4),
             5 => Some (day_05::day_5),
             6 => Some (day_06::day_6),
+            7 => Some (day_07::day_7),
+            8 => Some (day_08::day_8),
             15=> Some (day_15::day_15),
             16=> Some (day_16::day_16),
             17=> Some (day_17::day_17),

@@ -59,6 +59,8 @@ Here are the results I get to solve the two parts of the problems:
 | 04  | [Camp Cleanup](https://adventofcode.com/2022/day/4)              | [day_04.rs](./src/y2022/day_04.rs) | 0.115      |
 | 05  | [Supply Stacks](https://adventofcode.com/2022/day/5)             | [day_05.rs](./src/y2022/day_05.rs) | 0.157      |
 | 06  | [Tuning Trouble](https://adventofcode.com/2022/day/6)            | [day_06.rs](./src/y2022/day_06.rs) | 0.011      |
+| 07  | [No Space Left On Device](https://adventofcode.com/2022/day/7)   | [day_07.rs](./src/y2022/day_07.rs) | 0.067      |
+| ... | ...                                                              | ...                                | ...        |
 | 15  | [Beacon Exclusion Zone](https://adventofcode.com/2022/day/15)    | [day_15.rs](./src/y2022/day_15.rs) | 0.114      |
 | 16  | [Proboscidea Volcanium](https://adventofcode.com/2022/day/16)    | [day_16.rs](./src/y2022/day_16.rs) | 2.755      |
 | 17  | [Pyroclastic Flow](https://adventofcode.com/2022/day/17)         | [day_17.rs](./src/y2022/day_17.rs) | 0.653      |
