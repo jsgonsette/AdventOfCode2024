@@ -87,7 +87,8 @@ fn dir_size_it<'a> (content: &'a [&'a str]) -> impl Iterator<Item = Result<u32>>
                 Err(e) => return Some (Err(e))
             };
 
-            // Emit a size for each DirUp command. Otherwise, just update the stack and continue
+            // Emit a size for each DirUp command (because it means that we have seen all its children)
+            // Otherwise, just update the stack and continue
             match entry {
                 Entry::DirUp      => {
                     let dir_size = stack.drain(stack.len ()-1 ..).next().unwrap();

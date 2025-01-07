@@ -32,6 +32,25 @@ impl Year for Y2024 {
 
     fn get_year(&self) -> u32 { 2024 }
 
+    fn get_day_name(&self, day: u32) -> Option<&str> {
+        match day {
+            1 => Some ("Historian Hysteria"),    13 => Some ("Claw Contraption"),
+            2 => Some ("Red-Nosed Reports"),     14 => Some ("Restroom Redoubt"),
+            3 => Some ("Mull It Over"),          15 => Some ("Warehouse Woes"),
+            4 => Some ("Ceres Search Hysteria"), 16 => Some ("Reindeer Maze"),
+            5 => Some ("Print Queue"),           17 => Some ("Chronospatial Computer"),
+            6 => Some ("Guard Gallivant"),       18 => Some ("RAM Run"),
+            7 => Some ("Bridge Repair"),         19 => Some ("Linen Layout"),
+            8 => Some ("Resonant Collinearity"), 20 => Some ("Race Condition"),
+            9 => Some ("Disk Fragmenter"),       21 => Some ("Keypad Conundrum"),
+            10 => Some ("Hoof It"),              22 => Some ("Monkey Market"),
+            11 => Some ("Plutonian Pebbles"),    23 => Some ("LAN Party"),
+            12 => Some ("Garden Groups"),        24 => Some ("Crossed Wires"),
+            25 => Some ("Code Chronicle"),
+            _ => None
+        }
+    }
+
     fn get_day_fn(&self, day: u32) -> Option<FnDay> {
         match day {
             1 => Some (day_01::day_1),

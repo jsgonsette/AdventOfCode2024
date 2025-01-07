@@ -32,6 +32,9 @@ trait Year {
 
     /// Get the function solving the problem of the given `day`
     fn get_day_fn (&self, day: u32) -> Option<FnDay>;
+
+    /// Get the puzzle name for the given `day`
+    fn get_day_name (&self, day: u32) -> Option<&str>;
 }
 
 /// Each problem expects a final numerical or textual solution
@@ -57,24 +60,24 @@ fn main() -> Result<()> {
 
     /*let result = benchmark_year(&Y2022, 100);
     print_benchmark_result(&result);
-    print_benchmark_result (&result);
     make_svg(&result, "./out/perfo-2022.svg");*/
 
     Ok(())
 }
 
-fn print_benchmark_result (benchmark_result: &BenchmarkResult) {
+fn print_benchmark_result<Y> (year: Y, benchmark_result: &BenchmarkResult)
+where Y : Year {
 
-    let web = "https://adventofcode.com/2024/day/";
-    let source = "./src/y2024/day_";
+    let web = format! ("https://adventofcode.com/{}/day/", year.get_year());
+    let source = format! ("./src/y{}/day_", year.get_year());
 
-    let template = "| {}  | [Historian Hysteria](https://adventofcode.com/2024/day/{})      | [day_01.rs](./src/y2024/day_{}.rs) | {}      |";
     for key in benchmark_result.keys().sorted() {
         if let Some(Ok(duration)) = benchmark_result.get(key) {
 
+            let puzzle_name = year.get_day_name(*key).unwrap();
             let formatted = format!("{:.1$}", duration.as_micros() as f64 / 1000.0, 3);
-            println!("| {:02}  | [Historian Hysteria](https://adventofcode.com/2024/day/{})      | [day_{:02}.rs](./src/y2024/day_{:02}.rs) | {}      |",
-                key, key, key, key, formatted);
+            println!("| {:02}  | [{}]({}{})      | [day_{:02}.rs]({}{:02}.rs) | {}      |",
+                key, puzzle_name, web, key, key, source, key, formatted);
         }
     }
 }
