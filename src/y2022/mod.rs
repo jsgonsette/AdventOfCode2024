@@ -60,7 +60,7 @@ impl Year for Y2022 {
             5 => Some ("Supply Stacks"),           17 => Some ("Pyroclastic Flow"),
             6 => Some ("Tuning Trouble"),          18 => Some ("Boiling Boulders"),
             7 => Some ("No Space Left On Device"), 19 => Some ("Not Enough Minerals"),
-            8 => Some (" "),                       20 => Some ("Grove Positioning Syste"),
+            8 => Some ("Treetop Tree House"),      20 => Some ("Grove Positioning System"),
             9 => Some (" "),                       21 => Some ("Monkey Math"),
             10 => Some (" "),                      22 => Some ("Monkey Map"),
             11 => Some (" "),                      23 => Some ("Blizzard Basin"),

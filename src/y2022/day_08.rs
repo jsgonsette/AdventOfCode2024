@@ -1,5 +1,5 @@
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Solution};
 
 const TEST: &str = "\
 30373
@@ -12,13 +12,13 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-/// Return an iterator yielding tree height for each character in the provided `row`
-fn convert_input_height_<'a> (row: &'a str) -> impl Iterator<Item=Result<u8>> + 'a {
+/// Return an iterator yielding a tree height for each character in the provided `row`
+fn convert_input_height<'a> (row: &'a str) -> impl Iterator<Item=Result<u8>> + 'a {
     row.as_bytes().iter ().map (
-        |b| if b.is_ascii_digit() {
+        move |b| if b.is_ascii_digit() {
             Ok(*b - b'0')
         } else {
-            bail!("")
+            bail!("Invalid digit found in row {}", row)
         }
     )
 }
@@ -26,81 +26,60 @@ fn convert_input_height_<'a> (row: &'a str) -> impl Iterator<Item=Result<u8>> + 
 /// Convert the puzzle file `content` into a unique vector representing the forest.
 fn convert_content_to_forest (content: &[&str]) -> Result<Vec<u8>> {
     content.iter().flat_map(
-        |row| convert_input_height_(row)
-    ).collect()
-}
-
-fn convert_input_height (row: &str) -> Result<Vec<i8>> {
-
-    row.as_bytes().iter ().map (
-        |b| if b.is_ascii_digit() {
-            Ok((*b - b'0') as i8)
-        } else {
-            bail!("")
-        }
+        |row| convert_input_height(row)
     ).collect()
 }
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
+    let forest_width = content[0].len();
+    let forest_height = content.len();
+    let forest = convert_content_to_forest(content)?;
 
-    let forest_width = content [0].len();
-    let mut top_vertical = vec! [-1; forest_width];
-    let mut tree_visibility = vec! [false; forest_width * content.len()];
+    // Tree visibility
+    let mut visibility = vec![false; forest_width * forest_height];
 
-    let mut make_visible = |idx_h: usize, idx_v: usize| {
-        (&mut tree_visibility) [idx_v * forest_width + idx_h] = true;
-    };
+    // Highest tree when scanning
+    let mut taller_left;
+    let mut taller_right;
+    let mut taller_top = vec![0; forest_width];
+    let mut taller_bottom = vec![0; forest_width];
 
-    for (idx_v, row) in content.iter().enumerate() {
-        let heights = convert_input_height(&row)?;
+    let index = |x: usize, y: usize| { y * forest_width + x };
 
-        heights
-            .iter()
-            .enumerate ()
-            .fold((-1, 0), |(mut top, mut num_visible), (idx_h,  &height)| {
+    // Scan top down and left to right.
+    for y in 0..forest_height {
+        taller_left = 0;
+        taller_right = 0;
 
-                if height > top {
-                    top = height;
-                    make_visible (idx_h, idx_v);
-                }
+        for x in 0..forest_width {
 
-                if height > top_vertical [idx_h] {
-                    top_vertical [idx_h] = height;
-                    make_visible (idx_h, idx_v);
-                }
+            // Get the height (+1) of the tree at (x, y), and that of the symmetrical one.
+            // For the symmetrical tree, it is as if we scan from right to left and down to top
+            let idx_xy = index(x, y);
+            let idx_sym = index(forest_width - 1 -x, forest_height -1 -y);
+            let h_xy = forest [idx_xy] +1;
+            let h_sym = forest [idx_sym] +1;
 
-                (top, num_visible)
-            });
+            // Check visibility of the tree at (x, y) from the left and the top
+            if h_xy > taller_left || h_xy > taller_top[x] {
+                visibility[idx_xy] = true;
+            }
+
+            // Check visibility of the symmetrical tree from the right and the bottom
+            if h_sym > taller_right || h_sym > taller_bottom[forest_width - 1 -x] {
+                visibility[idx_sym] = true;
+            }
+
+            taller_left = taller_left.max(h_xy);
+            taller_top[x] = taller_top[x].max(h_xy);
+
+            taller_right = taller_right.max(h_sym);
+            taller_bottom[forest_width - 1 -x] = taller_bottom [forest_width - 1 -x].max(h_sym);
+        }
     }
 
-    top_vertical.fill(-1);
-    for (idx_v, row) in content.iter().rev ().enumerate() {
-        let heights = convert_input_height(&row)?;
-
-        heights
-            .iter().rev ()
-            .enumerate ()
-            .fold((-1, 0), |(mut top, mut num_visible), (idx_h,  &height)| {
-
-                let idx_h = forest_width - idx_h -1;
-                let idx_v = content.len() - idx_v -1;
-
-                if height > top {
-                    top = height;
-                    make_visible (idx_h, idx_v);
-                }
-
-                if height > top_vertical [idx_h] {
-                    top_vertical [idx_h] = height;
-                    make_visible (idx_h, idx_v);
-                }
-
-                (top, num_visible)
-            });
-    }
-
-    Ok(tree_visibility.iter().filter(|&&x| x).count())
+    Ok (visibility.iter().filter(|&&v| v).count())
 }
 
 /// Solve second part of the puzzle
