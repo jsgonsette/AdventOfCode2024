@@ -53,24 +53,26 @@ Here are the results I get to solve the two parts of the problems:
 
 | Day | Puzzle                                                           | Code                               | Perf. (ms) |
 |-----|------------------------------------------------------------------|------------------------------------|------------|
-| 01  | [Calorie Counting](https://adventofcode.com/2022/day/1)          | [day_01.rs](./src/y2022/day_01.rs) | 0.074      |
-| 02  | [Rock Paper Scissors](https://adventofcode.com/2022/day/2)       | [day_02.rs](./src/y2022/day_02.rs) | 0.082      |
-| 03  | [Rucksack Reorganization](https://adventofcode.com/2022/day/3)   | [day_03.rs](./src/y2022/day_03.rs) | 0.070      |
-| 04  | [Camp Cleanup](https://adventofcode.com/2022/day/4)              | [day_04.rs](./src/y2022/day_04.rs) | 0.113      |
-| 05  | [Supply Stacks](https://adventofcode.com/2022/day/5)             | [day_05.rs](./src/y2022/day_05.rs) | 0.155      |
+| 01  | [Calorie Counting](https://adventofcode.com/2022/day/1)          | [day_01.rs](./src/y2022/day_01.rs) | 0.081      |
+| 02  | [Rock Paper Scissors](https://adventofcode.com/2022/day/2)       | [day_02.rs](./src/y2022/day_02.rs) | 0.086      |
+| 03  | [Rucksack Reorganization](https://adventofcode.com/2022/day/3)   | [day_03.rs](./src/y2022/day_03.rs) | 0.071      |
+| 04  | [Camp Cleanup](https://adventofcode.com/2022/day/4)              | [day_04.rs](./src/y2022/day_04.rs) | 0.114      |
+| 05  | [Supply Stacks](https://adventofcode.com/2022/day/5)             | [day_05.rs](./src/y2022/day_05.rs) | 0.138      |
 | 06  | [Tuning Trouble](https://adventofcode.com/2022/day/6)            | [day_06.rs](./src/y2022/day_06.rs) | 0.006      |
-| 07  | [No Space Left On Device](https://adventofcode.com/2022/day/7)   | [day_07.rs](./src/y2022/day_07.rs) | 0.059      |
-| 08  | [Treetop Tree House](https://adventofcode.com/2022/day/8)        | [day_08.rs](./src/y2022/day_08.rs) | 0.368      |
-| 15  | [Beacon Exclusion Zone](https://adventofcode.com/2022/day/15)    | [day_15.rs](./src/y2022/day_15.rs) | 0.108      |
-| 16  | [Proboscidea Volcanium](https://adventofcode.com/2022/day/16)    | [day_16.rs](./src/y2022/day_16.rs) | 2.529      |
-| 17  | [Pyroclastic Flow](https://adventofcode.com/2022/day/17)         | [day_17.rs](./src/y2022/day_17.rs) | 0.632      |
-| 18  | [Boiling Boulders](https://adventofcode.com/2022/day/18)         | [day_18.rs](./src/y2022/day_18.rs) | 6.765      |
-| 19  | [Not Enough Minerals](https://adventofcode.com/2022/day/19)      | [day_19.rs](./src/y2022/day_19.rs) | 41.09      |
-| 20  | [Grove Positioning System](https://adventofcode.com/2022/day/20) | [day_20.rs](./src/y2022/day_20.rs) | 55.88      |
-| 21  | [Monkey Math](https://adventofcode.com/2022/day/21)              | [day_21.rs](./src/y2022/day_21.rs) | 5.685      |
-| 22  | [Monkey Map](https://adventofcode.com/2022/day/22)               | [day_22.rs](./src/y2022/day_22.rs) | 0.420      |
-| 23  | [Blizzard Basin](https://adventofcode.com/2022/day/23)           | [day_23.rs](./src/y2022/day_23.rs) | 704.9      |
-| 24  | [Crossed Wires](https://adventofcode.com/2022/day/24)            | [day_24.rs](./src/y2022/day_24.rs) | 54.01      |
+| 07  | [No Space Left On Device](https://adventofcode.com/2022/day/7)   | [day_07.rs](./src/y2022/day_07.rs) | 0.068      |
+| 08  | [Treetop Tree House](https://adventofcode.com/2022/day/8)        | [day_08.rs](./src/y2022/day_08.rs) | 0.383      |
+| 09  | [Rope Bridge](https://adventofcode.com/2022/day/9)               | [day_09.rs](./src/y2022/day_09.rs) | 0.919      |
+| 10  | [Cathode-Ray Tube](https://adventofcode.com/2022/day/10)         | [day_10.rs](./src/y2022/day_10.rs) | 0.006      |
+| 15  | [Beacon Exclusion Zone](https://adventofcode.com/2022/day/15)    | [day_15.rs](./src/y2022/day_15.rs) | 0.118      |
+| 16  | [Proboscidea Volcanium](https://adventofcode.com/2022/day/16)    | [day_16.rs](./src/y2022/day_16.rs) | 2.297      |
+| 17  | [Pyroclastic Flow](https://adventofcode.com/2022/day/17)         | [day_17.rs](./src/y2022/day_17.rs) | 0.614      |
+| 18  | [Boiling Boulders](https://adventofcode.com/2022/day/18)         | [day_18.rs](./src/y2022/day_18.rs) | 6.904      |
+| 19  | [Not Enough Minerals](https://adventofcode.com/2022/day/19)      | [day_19.rs](./src/y2022/day_19.rs) | 40.18      |
+| 20  | [Grove Positioning System](https://adventofcode.com/2022/day/20) | [day_20.rs](./src/y2022/day_20.rs) | 55.95      |
+| 21  | [Monkey Math](https://adventofcode.com/2022/day/21)              | [day_21.rs](./src/y2022/day_21.rs) | 5.818      |
+| 22  | [Monkey Map](https://adventofcode.com/2022/day/22)               | [day_22.rs](./src/y2022/day_22.rs) | 0.417      |
+| 23  | [Unstable Diffusion](https://adventofcode.com/2022/day/23)       | [day_23.rs](./src/y2022/day_23.rs) | 723.0      |
+| 24  | [Blizzard Basin](https://adventofcode.com/2022/day/24)           | [day_24.rs](./src/y2022/day_24.rs) | 54.58      |
 | 25  | [Full of Hot Air](https://adventofcode.com/2022/day/25)          | [day_25.rs](./src/y2022/day_25.rs) | 0.012      |
 
 
