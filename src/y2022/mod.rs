@@ -17,6 +17,7 @@ mod day_03;
 mod day_06;
 mod day_07;
 mod day_08;
+mod day_09;
 
 use crate::{FnDay, Year};
 
@@ -36,6 +37,7 @@ impl Year for Y2022 {
             6 => Some (day_06::day_6),
             7 => Some (day_07::day_7),
             8 => Some (day_08::day_8),
+            9 => Some (day_09::day_9),
             15=> Some (day_15::day_15),
             16=> Some (day_16::day_16),
             17=> Some (day_17::day_17),
@@ -61,10 +63,10 @@ impl Year for Y2022 {
             6 => Some ("Tuning Trouble"),          18 => Some ("Boiling Boulders"),
             7 => Some ("No Space Left On Device"), 19 => Some ("Not Enough Minerals"),
             8 => Some ("Treetop Tree House"),      20 => Some ("Grove Positioning System"),
-            9 => Some (" "),                       21 => Some ("Monkey Math"),
+            9 => Some ("Rope Bridge"),             21 => Some ("Monkey Math"),
             10 => Some (" "),                      22 => Some ("Monkey Map"),
-            11 => Some (" "),                      23 => Some ("Blizzard Basin"),
-            12 => Some (" "),                      24 => Some ("Crossed Wires"),
+            11 => Some (" "),                      23 => Some ("Unstable Diffusion"),
+            12 => Some (" "),                      24 => Some ("Blizzard Basin"),
             25 => Some ("Full of Hot Air"),
             _ => None
         }

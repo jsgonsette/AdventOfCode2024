@@ -40,6 +40,10 @@ impl From<Coo> for (usize, usize) {
     }
 }
 
+impl Default for Coo {
+    fn default() -> Self { Coo { x: 0, y: 0 } }
+}
+
 impl Coo {
 
     /// Returns the coordinates resulting from moving one step in the provided `direction`
