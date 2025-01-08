@@ -55,6 +55,15 @@ impl Coo {
         }
     }
 
+    /// Returns the coordinates resulting from moving some distance in the provided `direction`
+    pub fn step (&self, direction: Direction, distance: isize) -> Self {
+        let step = direction.step();
+        Self {
+            x: self.x + step.x * distance,
+            y: self.y + step.y * distance,
+        }
+    }
+
     /// Returns the coordinates resulting from moving one step in the provided `direction`,
     /// except if the coordinates are not in the area [0; width[ x [0; height[.
     pub fn try_next(&self, direction: Direction, width: usize, height: usize) -> Option<Coo> {

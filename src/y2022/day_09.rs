@@ -13,12 +13,13 @@ D 1
 L 5
 R 2";
 
+/// Models a move instruction
 #[derive(Debug)]
 struct Move (Direction, u8);
 
-struct Rope {
-    head: Coo,
-    tail: Coo,
+/// Models a rope with `N` nodes
+struct Rope<const N: usize> {
+    body: [Coo; N],
     visited: HashSet<Coo>,
 }
 
@@ -26,44 +27,44 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
+impl<const N: usize> Rope<N> {
 
-impl Rope {
-
-    fn new () -> Rope {
+    /// New rope instance
+    fn new () -> Rope<N> {
         Rope  {
-            head: Coo::default(),
-            tail: Coo::default(),
+            body: [Coo::default(); N],
             visited: HashSet::from([Coo::default()]),
         }
     }
 
+    /// Follow the rope dynamic, given the instruction `mov`
     fn update (&mut self, mov: &Move) {
 
-        let (mut head, mut tail) = (self.head, self.tail);
+        // Iterate on the number of steps
+        for _step in 0.. mov.1 {
 
-        for _ in 0.. mov.1 {
-            head = head.next(mov.0);
-            //println!(" - head: {:?}", head);
+            // Move the head
+            self.body [0] = self.body [0].next(mov.0);
 
-            let dx = head.x - tail.x;
-            let dy = head.y - tail.y;
+            // The body follows
+            for idx in 1..N {
+                let front = self.body [idx-1];
+                let dx = front.x - self.body [idx].x;
+                let dy = front.y - self.body [idx].y;
 
-            tail = match (dx.abs(), dy.abs()) {
-                (0, 0) | (0, 1) | (1, 0) | (1, 1) => tail,
-                (dxa, dya) if dya > dxa => Coo::from((head.x, head.y - dy.signum())),
-                (dxa, dya)              => Coo::from((head.x - dx.signum(), head.y)),
-            };
+                if dx.abs() >= 2 || dy.abs() >= 2 {
+                    self.body [idx].x += dx.signum();
+                    self.body [idx].y += dy.signum();
+                }
+                else { break; }
+            }
 
-            self.visited.insert(tail);
-            //println!(" - tail: {:?}", tail);
+            self.visited.insert(self.body [N-1]);
         }
-
-        //println!("New position: {:?} - {:?}", head, tail);
-        self.head = head;
-        self.tail = tail;
     }
 }
 
+/// Return an iterator yielding [Move], based on the puzzle file `content`
 fn get_moves<'a> (content: &'a[&'a str]) -> impl Iterator<Item=Result<Move>> + 'a {
 
     content.iter().map (|&row| {
@@ -84,33 +85,36 @@ fn get_moves<'a> (content: &'a[&'a str]) -> impl Iterator<Item=Result<Move>> + '
     })
 }
 
-
 /// Solve first part of the puzzle
-fn part_a (_content: &[&str]) -> Result<usize> {
+fn part_a (content: &[&str]) -> Result<usize> {
 
-    let mut rope = Rope::new();
+    let mut rope = Rope::<2>::new();
 
-    for mov in get_moves(_content) {
+    for mov in get_moves(content) {
         rope.update(&mov?);
     }
 
-    println!("{}", rope.visited.len());
-    Ok(0)
+    Ok(rope.visited.len())
 }
 
 /// Solve second part of the puzzle
-fn part_b (_content: &[&str]) -> Result<usize> {
+fn part_b (content: &[&str]) -> Result<usize> {
 
-    Ok(0)
+    let mut rope = Rope::<10>::new();
+
+    for mov in get_moves(content) {
+        rope.update(&mov?);
+    }
+
+    Ok(rope.visited.len())
 }
 
 pub fn day_9 (content: &[&str]) -> Result <(Solution, Solution)> {
 
-    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 0);
-    debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 0);
+    debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 13);
 
     let ra = part_a(content)?;
-    let rb = 0;//part_b(content)?;
+    let rb = part_b(content)?;
 
     Ok((Solution::Unsigned(ra), Solution::Unsigned(rb)))
 }
