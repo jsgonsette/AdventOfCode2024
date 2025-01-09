@@ -20,6 +20,7 @@ mod day_08;
 mod day_09;
 mod day_10;
 mod day_11;
+mod day_12;
 
 use crate::{FnDay, Year};
 
@@ -42,6 +43,7 @@ impl Year for Y2022 {
             9 => Some (day_09::day_9),
             10 =>Some (day_10::day_10),
             11 =>Some (day_11::day_11),
+            12 =>Some (day_12::day_12),
             15=> Some (day_15::day_15),
             16=> Some (day_16::day_16),
             17=> Some (day_17::day_17),
@@ -59,8 +61,8 @@ impl Year for Y2022 {
 
     fn get_day_name(&self, day: u32) -> Option<&str> {
         match day {
-            1 => Some ("Calorie Counting"),        13 => Some (" "),
-            2 => Some ("Rock Paper Scissors"),     14 => Some (" "),
+            1 => Some ("Calorie Counting"),        13 => Some ("Distress Signal"),
+            2 => Some ("Rock Paper Scissors"),     14 => Some ("Regolith Reservoir"),
             3 => Some ("Rucksack Reorganization"), 15 => Some ("Beacon Exclusion Zone"),
             4 => Some ("Camp Cleanup"),            16 => Some ("Proboscidea Volcanium"),
             5 => Some ("Supply Stacks"),           17 => Some ("Pyroclastic Flow"),
@@ -69,8 +71,8 @@ impl Year for Y2022 {
             8 => Some ("Treetop Tree House"),      20 => Some ("Grove Positioning System"),
             9 => Some ("Rope Bridge"),             21 => Some ("Monkey Math"),
             10 => Some ("Cathode-Ray Tube"),       22 => Some ("Monkey Map"),
-            11 => Some (" "),                      23 => Some ("Unstable Diffusion"),
-            12 => Some (" "),                      24 => Some ("Blizzard Basin"),
+            11 => Some ("Monkey in the Middle"),   23 => Some ("Unstable Diffusion"),
+            12 => Some ("Hill Climbing Algorithm"),24 => Some ("Blizzard Basin"),
             25 => Some ("Full of Hot Air"),
             _ => None
         }
