@@ -11,18 +11,20 @@ accszExk
 acctuvwj
 abdefghi";
 
-
+/// Flag on the start or end location
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Flag {
     Start, End
 }
 
+/// Models a terrain tile
 #[derive(Debug, Copy, Clone)]
 struct Tile {
     height: u8,
     flag: Option<Flag>,
 }
 
+/// Area we try to climb
 struct AreaClimber {
     tiles: GridCell<Tile>,
     end: Coo,
@@ -93,38 +95,37 @@ impl AreaClimber {
         })
     }
 
+    /// Return a list of suitable tiles to explore, adjacent to `coo`, when going down
+    /// from the top. We must respect the constraint on the difference of altitude.
+    fn get_adjacent_tiles_going_down (&self, coo: Coo) -> Vec<Coo> {
+
+        let height = self.tiles.sample(coo).height;
+
+        coo.iter_adjacent_4().filter(|coo| {
+            self.tiles.try_sample(*coo).and_then(|tile| {
+                Some (tile.height >= height -1)
+            }) == Some (true)
+        })
+        .collect()
+    }
+
+    /// Compute the minimum number of steps to walk from the top to the start.
     fn compute_steps_to_top (&self, find_best_start: bool) -> Option<usize> {
 
-        let mut visited = vec![vec![false; self.tiles.height()]; self.tiles.width()];
-        let mut pq = PriorityQueue::new ();
+        let fn_adjacency = |coo: Coo| {
+            self.get_adjacent_tiles_going_down(coo).into_iter()
+        };
 
-        let end = Explore { coo: self.end, score: 0 };
-        pq.push (end);
+        // Iter from the end tile by increasing score (distance)
+        for (_coo, cell, score) in self.tiles.iter_dijkstra(self.end, fn_adjacency) {
 
-        while let Some(item) = pq.pop() {
-
-            let current = self.tiles.sample(item.coo);
-            let current_height = current.height;
-
-            if current_height == b'a' {
-                if current.flag == Some (Flag::Start) || find_best_start {
-                    return Some (item.score);
-                }
-            }
-
-            for coo_next in item.coo.iter_adjacent_4() {
-                if let Some(tile) = self.tiles.try_sample(coo_next) {
-
-                    let (x, y) = (coo_next.x as usize, coo_next.y as usize);
-                    if visited [x][y] { continue; }
-                    if tile.height < current_height -1 { continue; }
-
-                    visited [x][y] = true;
-                    pq.push(Explore { coo: coo_next, score: item.score +1 });
+            // Stop condition
+            if cell.height == b'a' {
+                if cell.flag == Some (Flag::Start) || find_best_start {
+                    return Some (score);
                 }
             }
         }
-
         None
     }
 }

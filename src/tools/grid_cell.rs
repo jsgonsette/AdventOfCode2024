@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::fmt::Display;
 use anyhow::{anyhow, bail};
 use itertools::Itertools;
@@ -15,12 +17,36 @@ pub struct GridCell<T> {
 pub trait Cell: Sized + Default + Clone {
 
     /// Create a Cell from a text character
-    fn from_character (c: char) -> Option<Self>;
+    fn from_character (_c: char) -> Option<Self> { None }
 
     /// Turn the cell into a text character
-    fn to_char (&self) -> char;
+    fn to_char (&self) -> char { '?' }
 }
 
+
+/// Next element to explore with Dijkstra
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+struct DijkstraItem {
+    coo: Coo,
+    score: usize,
+}
+
+/// Dijkstra priority queue
+type PriorityQueue = BinaryHeap<DijkstraItem>;
+
+/// Ordering for [DijkstraItem] elements in the [PriorityQueue]
+impl Ord for DijkstraItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.score.cmp(&self.score)
+    }
+}
+
+/// Ordering for [DijkstraItem] elements in the [PriorityQueue]
+impl PartialOrd for DijkstraItem {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 /// To help debugging
 impl<T: Cell> Display for GridCell<T> {
@@ -193,4 +219,49 @@ impl<T: Cell> GridCell<T> {
 
         (x, y)
     }
+
+    /// Return an iterator that yields triplets `(coo, &cell, score)` by increasing score.
+    ///
+    /// This function implements a Dijkstra algorithm that begins its exploration at coordinate `from`.
+    /// Then, it uses the provided `fn_adjacency` function to progress across its unexplored neighborhood.
+    /// Each discovered cell get a score resulting from the parent cell + the adjacency weight.
+    /// The iteration stops when there is no cell left to explore.
+    pub fn iter_dijkstra<F, I> (&self, from: Coo, fn_adjacency: F) -> impl Iterator<Item = (Coo, &T, usize)>
+    where
+        F: Fn(Coo) -> I,
+        I: Iterator<Item = Coo> {
+
+        let mut visited = vec! [false; self.cells.len()];
+        let mut pq = PriorityQueue::new ();
+
+        let start = DijkstraItem { coo: from, score: 0 };
+        pq.push (start);
+
+        std::iter::from_fn(move || {
+
+            if let Some (item) = pq.pop() {
+
+                let notify = (item.coo, self.sample(item.coo), item.score);
+                let adjacency = fn_adjacency (item.coo);
+
+                for next_coo in adjacency {
+                    let index = self.index(&next_coo);
+                    if visited[index] { continue }
+                    visited[index] = true;
+                    pq.push(DijkstraItem { coo: next_coo, score: item.score+1 })
+                }
+
+                Some (notify)
+            }
+
+            else {
+                None
+            }
+        })
+    }
+
+    fn index (&self, coo: &Coo) -> usize {
+        coo.y as usize * self.width + coo.x as usize
+    }
+
 }
