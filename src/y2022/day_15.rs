@@ -3,7 +3,7 @@ use anyhow::*;
 use itertools::Itertools;
 use num::Integer;
 use crate::Solution;
-use crate::tools::{Coo, IntInterval, IntIntervals, RowReader};
+use crate::tools::{Coo, IntInterval, IntIntervals, IntReader};
 
 const TEST: &str = "\
 Sensor at x=2, y=18: closest beacon is at x=-2, y=15
@@ -47,7 +47,7 @@ fn split (content: &str) -> Vec<&str> {
 /// Collect all the beacon-sensor pairs from the puzzle file `content`
 fn collect_device_pairs (content: &[&str]) -> Result<Vec<Pair>> {
 
-    let mut reader = RowReader::new(true);
+    let mut reader = IntReader::new(true);
 
     content.iter().map (|&row| {
         let raw: [isize; 4] = reader.process_row_fix(row)

@@ -1,6 +1,6 @@
 use anyhow::*;
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 Monkey 0:
@@ -86,7 +86,7 @@ impl Monkey {
 
 /// Extract the description of a [Monkey] from a slice of 6 `rows` of the puzzle file content.
 fn read_monkey (rows: &[&str]) -> Result<Monkey> {
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     if rows.len() < 6 { bail!("Not enough rows!") }
 
     // To read a single value from a single line

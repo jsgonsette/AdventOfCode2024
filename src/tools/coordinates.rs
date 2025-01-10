@@ -16,10 +16,12 @@ pub struct Coo {
     pub y: isize,
 }
 
+/// [Coo] to signed pair
 impl From<Coo> for (isize, isize) {
     fn from(coo: Coo) -> Self { (coo.x, coo.y) }
 }
 
+/// Unsigned pair to [Coo]
 impl From<(usize, usize)> for Coo {
     fn from((x, y): (usize, usize)) -> Self {
         assert!(x <= isize::MAX as usize && y <= isize::MAX as usize);
@@ -27,12 +29,14 @@ impl From<(usize, usize)> for Coo {
     }
 }
 
+/// Signed pair to [Coo]
 impl From<(isize, isize)> for Coo {
     fn from((x, y): (isize, isize)) -> Self {
         Coo { x, y }
     }
 }
 
+/// [Coo] to unsigned pair
 impl From<Coo> for (usize, usize) {
     fn from(coo: Coo) -> Self {
         assert!(coo.x >= 0 && coo.y >= 0);

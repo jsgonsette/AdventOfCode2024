@@ -1,7 +1,7 @@
 use std::collections::{HashMap};
 use anyhow::*;
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "125 17";
 
@@ -96,7 +96,7 @@ impl Memoization {
 fn solve (row: &str, num_blinks: u8) -> Result<usize> {
 
     let mut memo = Memoization::new();
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     let numbers_it = reader.iter_row(row);
 
     let length = numbers_it.map(

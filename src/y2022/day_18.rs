@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use anyhow::*;
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 2,2,2
@@ -35,7 +35,7 @@ fn split (content: &str) -> Vec<&str> {
 /// Load all the droplets from the puzzle file `content`
 fn load_droplets (content: &[&str]) -> Result<Vec<Droplet>> {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
 
     content.iter().map (|&row| {
         let raw: [i8; 3] = reader

@@ -1,7 +1,7 @@
 use anyhow::*;
 use itertools::{Itertools};
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 1
@@ -29,7 +29,7 @@ fn split (content: &str) -> Vec<&str> {
 /// Load the monkey seeds from the puzzle file content
 fn load_seeds (content: &[&str]) -> Result<Vec<usize>> {
 
-    let mut reader= RowReader::new(false);
+    let mut reader= IntReader::new(false);
 
     content.iter().map(|&row| {
         let raw: [usize; 1] = reader.process_row_fix(row)

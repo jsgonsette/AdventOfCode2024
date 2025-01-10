@@ -1,6 +1,6 @@
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 Button A: X+94, Y+34
@@ -77,7 +77,7 @@ impl ClawMachine {
 /// Load the definitions of the claw machines from the puzzle file content
 fn load_machines (content: &[&str]) -> Result<Vec<ClawMachine>> {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     let num_machines = 1 + content.len()/4;
 
     let machines:Result<Vec<ClawMachine>> = (0..num_machines).map(|idx| {

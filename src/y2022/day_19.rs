@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::ops::{Add, Sub};
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
@@ -180,7 +180,7 @@ impl Process {
 /// Load all the [Blueprint] from the puzzle file `content`
 fn load_blueprints (content: &[&str]) -> Result<Vec<Blueprint>> {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
 
     content.iter ().map (|&row| {
         let raw_blueprint: [u32; 7] = reader

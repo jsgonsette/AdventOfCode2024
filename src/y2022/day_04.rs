@@ -1,6 +1,6 @@
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 2-4,6-8
@@ -34,7 +34,7 @@ fn split (content: &str) -> Vec<&str> {
 /// Iterate on each pair of [Range] at each row of the puzzle file `content`
 fn get_range_it<'a> (content: &'a [&'a str]) -> impl Iterator<Item = Result<(Range, Range)>> + 'a {
 
-    let mut reader = RowReader::new (false);
+    let mut reader = IntReader::new (false);
     content.iter().map (move |row| {
         let range_numbers: Vec<u32> = reader.iter_row::<u32>(row).collect();
         let left = Range (range_numbers [0], range_numbers [1]);

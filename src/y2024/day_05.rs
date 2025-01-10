@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 47|53
@@ -61,7 +61,7 @@ impl Rules {
     fn new (content: &[&str]) -> Result<Rules> {
 
         // Load the list of rules until we detect the empty line
-        let mut reader = RowReader::new(false);
+        let mut reader = IntReader::new(false);
         let list_rules: Vec<(Page, Page)> = content.iter ().map_while(|row| {
 
             // End of rule on empty line
@@ -175,7 +175,7 @@ impl Rules {
 /// Return an iterator on the updates of the puzzle file content
 fn read_updates<'a> (content: &'a[&'a str]) -> impl Iterator<Item = Update> + 'a {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     content.iter().map(move |row| {
         reader.iter_row(row).collect()
     })

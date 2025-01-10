@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap};
 use anyhow::*;
 use crate::{Cell, GridCell, Solution};
-use crate::tools::{Coo, Direction, RowReader};
+use crate::tools::{Coo, Direction, IntReader};
 
 const TEST: &str = "\
 5,4
@@ -105,7 +105,7 @@ impl MemorySpace {
     /// file `content`
     fn fill_space (&mut self, content: &[&str]) -> Result<()> {
 
-        let mut reader = RowReader::new(false);
+        let mut reader = IntReader::new(false);
 
         for (idx, &row) in content.iter().enumerate() {
             let location: [usize; 2] = reader.process_row_fix(row)
@@ -121,7 +121,7 @@ impl MemorySpace {
     /// Return an iterator on the corruption coordinates, in the order they appear.
     fn get_corruption_it<'a> (content: &'a[&'a str]) -> impl DoubleEndedIterator<Item=Result<Coo>> +'a {
 
-        let mut reader = RowReader::new(false);
+        let mut reader = IntReader::new(false);
 
         // Iterate on the rows
         content.iter().map (move |&row| {
@@ -294,7 +294,7 @@ fn part_b (content: &[&str], width: usize, height: usize, num_corruptions_start:
     let num_corruptions = search_slice[first_blocked_path];
 
     // Retrieve the corresponding location
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     let loc: [usize; 2] = reader.process_row_fix(content[num_corruptions - 1]).unwrap();
 
     let loc_string = format!("{},{}", loc[0], loc[1]);

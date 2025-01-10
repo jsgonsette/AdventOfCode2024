@@ -3,7 +3,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Solution};
-use crate::tools::{Coo, RowReader};
+use crate::tools::{Coo, IntReader};
 
 const TEST: &str = "\
 p=0,4 v=3,-3
@@ -96,7 +96,7 @@ impl Bathroom {
     /// Collect the positions and velocities of all the robots, based on the puzzle file `content`
     fn collect_robots (content: &[&str]) -> Result<Vec<Robot>> {
 
-        let mut reader = RowReader::new(true);
+        let mut reader = IntReader::new(true);
         content.iter().map (|&row|{
 
             let vector: [isize; 4] = reader.process_row_fix(row)

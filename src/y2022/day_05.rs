@@ -1,6 +1,6 @@
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 ....[D]
@@ -127,7 +127,7 @@ fn split (content: &str) -> Vec<&str> {
 /// is given by `rows` and corresponds to the second part of the file.
 fn get_move_it<'a> (rows: &'a[&'a str]) -> impl Iterator<Item = Result<Move>> + '_ {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
 
     rows.iter().map (move |row| {
         let raw_move: Vec<u32> = reader.iter_row::<u32>(row).collect();

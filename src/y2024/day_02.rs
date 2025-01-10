@@ -1,6 +1,6 @@
 use anyhow::*;
 use crate::Solution;
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 7 6 4 2 1
@@ -67,7 +67,7 @@ where I: IntoIterator<Item = &'a Level> {
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
 
     let sum_or_err: Result<Vec<usize>> = content.iter().map(|row| {
 
@@ -81,7 +81,7 @@ fn part_a (content: &[&str]) -> Result<usize> {
 /// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
-    let mut reader = RowReader::new(false);
+    let mut reader = IntReader::new(false);
     let sum = content.iter().map(|row| {
 
         let levels = reader.process_row(row);

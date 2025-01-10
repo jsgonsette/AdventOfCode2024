@@ -1,7 +1,7 @@
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST_1: &str = "\
 Register A: 729
@@ -110,7 +110,7 @@ impl Computer {
     /// New computer with program and registers set from the puzzle file content
     fn new (content: &[&str]) -> Result<Self> {
 
-        let mut reader = RowReader::new(false);
+        let mut reader = IntReader::new(false);
         let reg_a: [usize;1] = reader.process_row_fix(content [0]).ok_or(anyhow!("Reg A not found"))?;
         let reg_b: [usize;1] = reader.process_row_fix(content [1]).ok_or(anyhow!("Reg B not found"))?;
         let reg_c: [usize;1] = reader.process_row_fix(content [2]).ok_or(anyhow!("Reg C not found"))?;

@@ -4,7 +4,7 @@ use std::iter;
 use anyhow::*;
 use itertools::Itertools;
 use crate::{Solution};
-use crate::tools::RowReader;
+use crate::tools::IntReader;
 
 const TEST: &str = "\
 029A
@@ -232,7 +232,7 @@ fn split (content: &str) -> Vec<&str> {
 
 /// Load the different codes we have to deal with from the puzzle file `content`
 fn load_codes (content: &[&str]) -> Result<Vec<Code>> {
-    let mut reader= RowReader::new(false);
+    let mut reader= IntReader::new(false);
 
     content.iter().map(|&row| {
         let raw: [u32; 1] = reader.process_row_fix(row)
