@@ -115,13 +115,13 @@ impl RowReader {
 
 /// Models a rectangular area made of generic [Cell]
 #[derive(Clone)]
-pub struct CellArea<T> {
+pub struct GridCell<T> {
     width: usize,
     height: usize,
     cells: Vec<T>,
 }
 
-/// Models a single location inside a [CellArea]
+/// Models a single location inside a [GridCell]
 pub trait Cell: Sized + Default + Clone {
 
     /// Create a Cell from a text character
@@ -133,7 +133,7 @@ pub trait Cell: Sized + Default + Clone {
 
 
 /// To help debugging
-impl<T: Cell> Display for CellArea<T> {
+impl<T: Cell> Display for GridCell<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 
         for y in 0..self.height {
@@ -148,10 +148,10 @@ impl<T: Cell> Display for CellArea<T> {
     }
 }
 
-impl<T: Cell> CellArea<T> {
+impl<T: Cell> GridCell<T> {
 
     /// Instantiate the area on the basis of the puzzle file content.
-    pub fn new(content: &[&str]) -> anyhow::Result<CellArea<T>> {
+    pub fn new(content: &[&str]) -> anyhow::Result<GridCell<T>> {
 
         let width = content
             .iter()
@@ -163,7 +163,7 @@ impl<T: Cell> CellArea<T> {
         let cells = Self::load_cell_from_content(content, width)?;
         let height = cells.len () / width;
 
-        Ok(CellArea {
+        Ok(GridCell {
             width,
             height,
             cells,
@@ -171,8 +171,8 @@ impl<T: Cell> CellArea<T> {
     }
 
     /// New empty area (cell default) of given dimensions `width` and `height`
-    pub fn new_empty (width: usize, height: usize) -> CellArea<T> {
-        CellArea {
+    pub fn new_empty (width: usize, height: usize) -> GridCell<T> {
+        GridCell {
             width,
             height,
             cells: vec![Default::default(); width * height],
@@ -192,12 +192,12 @@ impl<T: Cell> CellArea<T> {
 
     /// Return a copy of this instance with additional margin cells along its 4 sides.
     /// Parameter `margin` indicates how many cells to add.
-    pub fn inflated (&self, margin: usize) -> CellArea<T> {
+    pub fn inflated (&self, margin: usize) -> GridCell<T> {
         let n_width = self.width + margin * 2;
         let n_height = self.height + margin * 2;
         let n_cells = vec![Default::default(); n_width * n_height];
 
-        let mut new_area = CellArea {
+        let mut new_area = GridCell {
             width: n_width,
             height: n_height,
             cells: n_cells,

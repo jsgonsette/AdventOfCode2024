@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap};
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction, RowReader};
 
 const TEST: &str = "\
@@ -42,7 +42,7 @@ enum MemoryTile {
 
 /// Models the memory corrupted maze
 struct MemorySpace {
-    area: CellArea<MemoryTile>,
+    area: GridCell<MemoryTile>,
 }
 
 /// Next element to explore with Dijkstra
@@ -96,7 +96,7 @@ impl MemorySpace {
 
     /// New empty instance of given `width` and `height`
     fn new (width: usize, height: usize) -> Self {
-        let area = CellArea::new_empty(width, height);
+        let area = GridCell::new_empty(width, height);
 
         Self { area }
     }

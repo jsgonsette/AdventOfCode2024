@@ -17,7 +17,7 @@ use itertools::Itertools;
 use crate::benchmark::{benchmark_year, make_svg, BenchmarkResult};
 use crate::y2023::Y2023;
 
-pub use tools::{Cell, CellArea};
+pub use tools::{Cell, GridCell};
 
 /// https://www.maurits.vdschee.nl/scatterplot/
 

@@ -1,5 +1,5 @@
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "        ...#
@@ -38,7 +38,7 @@ enum Tile {
 struct Board {
 
     /// All the tiles of the puzzle
-    area: CellArea<Tile>,
+    area: GridCell<Tile>,
 
     /// Current moving direction
     direction: Direction,
@@ -88,7 +88,7 @@ impl Board {
     fn new(content: &[&str], cube_mode: bool) -> Result<Board> {
 
         // Load the board content
-        let area = CellArea::new(content)?;
+        let area = GridCell::new(content)?;
 
         // Start direction and location
         let direction = Direction::Right;

@@ -1,6 +1,6 @@
 use std::collections::{HashMap};
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
@@ -79,7 +79,7 @@ type Trail = HashMap<Coo, Pipe>;
 struct PipeMaze {
 
     /// The area containing the pipes
-    pipes: CellArea<Pipe>,
+    pipes: GridCell<Pipe>,
 
     /// The start coordinate
     start: Coo,
@@ -124,7 +124,7 @@ impl PipeMaze {
     fn new(content: &[&str]) -> Result<PipeMaze> {
 
         // Build the area of pipes
-        let pipes: CellArea<Pipe> = CellArea::new(content)?;
+        let pipes: GridCell<Pipe> = GridCell::new(content)?;
 
         // Look for the tile with the start coordinate
         let start_cell = pipes.iter_cells()

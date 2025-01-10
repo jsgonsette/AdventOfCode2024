@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
@@ -51,13 +51,13 @@ enum WarehouseTile {
 
 /// Models the warehouse in part 1
 struct Warehouse {
-    area: CellArea<WarehouseTile>,
+    area: GridCell<WarehouseTile>,
     robot: Coo,
 }
 
 /// Models the wide warehouse in part 2
 struct WarehouseWide {
-    area: CellArea<WarehouseTile>,
+    area: GridCell<WarehouseTile>,
     robot: Coo,
 }
 
@@ -96,7 +96,7 @@ impl Warehouse {
     fn new(content: &[&str]) -> Result<Warehouse> {
 
         // Built the area from the puzzle file content
-        let area = CellArea::new(content)?;
+        let area = GridCell::new(content)?;
 
         // Find the robot location
         let robot: Coo = area.iter_cells().find_map(| (x, y, tile) | {
@@ -115,7 +115,7 @@ impl Warehouse {
     /// Compute an instance of *WIDE* warehouse from this warehouse
     fn twice_wide (self) -> WarehouseWide {
 
-        let mut area = CellArea::new_empty(self.area.width()*2, self.area.height());
+        let mut area = GridCell::new_empty(self.area.width()*2, self.area.height());
         for (x, y, &cell) in self.area.iter_cells() {
 
             // Each tile is doubled horizontally

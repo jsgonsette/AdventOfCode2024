@@ -1,5 +1,5 @@
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 
 const TEST: &str = "\
 #.######
@@ -41,7 +41,7 @@ struct MazeCell {
 
 /// Encodes the static content of the maze at some time
 #[derive(Clone)]
-struct Maze (CellArea<MazeCell>);
+struct Maze (GridCell<MazeCell>);
 
 /// Encodes the status of our exploration
 struct ExplorationMap {
@@ -117,7 +117,7 @@ impl Maze {
     /// New maze instance from puzzle file content
     fn new(content: &[&str]) -> Result<Maze> {
 
-        let area = CellArea::new(content)?;
+        let area = GridCell::new(content)?;
         Ok(Maze(area))
     }
 
@@ -133,7 +133,7 @@ impl Maze {
     fn evolve (&self) -> Maze {
 
         // Empty maze
-        let mut new_area = CellArea::<MazeCell>::new_empty(self.0.width(), self.0.height());
+        let mut new_area = GridCell::<MazeCell>::new_empty(self.0.width(), self.0.height());
 
         for x in 0..self.0.width () {
             for y in 0..self.0.height () {

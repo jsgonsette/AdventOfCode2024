@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use anyhow::*;
 use itertools::Itertools;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
@@ -51,7 +51,7 @@ struct Lab {
     guard_dir: Direction,
 
     /// Models the area locations
-    area: CellArea<LabCell>,
+    area: GridCell<LabCell>,
 }
 
 impl Default for LabCell {
@@ -114,7 +114,7 @@ impl Lab {
     /// New playground instance from puzzle file content
     fn new(content: &[&str]) -> Result<Lab> {
 
-        let area = CellArea::<LabCell>::new (content)?;
+        let area = GridCell::<LabCell>::new (content)?;
 
         let guard_pos = area.iter_cells().find_map(
             |(x, y, &cell)| if cell == LabCell::Guard {

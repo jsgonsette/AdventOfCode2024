@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
@@ -74,7 +74,7 @@ struct Region {
 struct Garden {
 
     /// The garden [tiles](GardenTile)
-    tiles: CellArea<GardenTile>,
+    tiles: GridCell<GardenTile>,
 }
 
 impl Garden {
@@ -82,7 +82,7 @@ impl Garden {
     /// New garden instance, built from the puzzle file content.
     fn new (content: &[&str]) -> Result<Garden> {
 
-        let tiles = CellArea::new(content)?;
+        let tiles = GridCell::new(content)?;
         Ok(Self { tiles, })
     }
 

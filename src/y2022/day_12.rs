@@ -1,9 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use anyhow::*;
-use itertools::Itertools;
-use crate::{Cell, CellArea, Solution};
-use crate::tools::{Coo, Direction};
+use crate::{Cell, GridCell, Solution};
+use crate::tools::{Coo};
 
 const TEST: &str = "\
 Sabqponm
@@ -25,8 +24,7 @@ struct Tile {
 }
 
 struct AreaClimber {
-    tiles: CellArea<Tile>,
-    start: Coo,
+    tiles: GridCell<Tile>,
     end: Coo,
 }
 
@@ -84,17 +82,13 @@ impl Cell for Tile {
 
 impl AreaClimber {
     fn new (content: &[&str]) -> Result<Self> {
-        let tiles: CellArea<Tile> = CellArea::new(content)?;
-
-        let start = tiles.find_cell(|tile| tile.flag == Some (Flag::Start))
-            .ok_or(anyhow!("No start tile found"))?;
+        let tiles: GridCell<Tile> = GridCell::new(content)?;
 
         let end = tiles.find_cell(|tile| tile.flag == Some (Flag::End))
             .ok_or(anyhow!("No end tile found"))?;
 
         Ok (AreaClimber {
             tiles,
-            start,
             end,
         })
     }

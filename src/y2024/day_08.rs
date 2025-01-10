@@ -3,7 +3,7 @@ use std::fmt::Display;
 use anyhow::*;
 use itertools;
 use itertools::Itertools;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::Coo;
 
 const TEST: &str = "\
@@ -38,7 +38,7 @@ struct CellAntenna {
 struct Map {
 
     /// The area with the antenna frequencies
-    area: CellArea<CellAntenna>,
+    area: GridCell<CellAntenna>,
 
     /// For each antenna frequency, we retain the corresponding antennas on the map
     antennas: HashMap<Frequency, Vec<Coo>>,
@@ -76,7 +76,7 @@ impl Map {
     fn new(content: &[&str]) -> Result<Self> {
 
         // Load the area
-        let area: CellArea<CellAntenna> = CellArea::new(content)?;
+        let area: GridCell<CellAntenna> = GridCell::new(content)?;
 
         // Collect the antennas by frequencies.
         // For each frequency, collect the matching coordinates

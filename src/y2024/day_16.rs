@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use anyhow::*;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo, Direction};
 
 const TEST: &str = "\
@@ -56,7 +56,7 @@ enum MazeTile {
 
 /// Models the maze, as a set of tiles and start location
 struct Maze {
-    tiles: CellArea<MazeTile>,
+    tiles: GridCell<MazeTile>,
     start: Location,
 }
 
@@ -112,7 +112,7 @@ impl Maze {
     fn new (content: &[&str]) -> Result<Self> {
 
         // Load the tiles
-        let area = CellArea::new(content)?;
+        let area = GridCell::new(content)?;
 
         // Recover the start location
         let (xs, ys, _) = area.iter_cells().find(

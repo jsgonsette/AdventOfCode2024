@@ -1,7 +1,7 @@
 use std::cmp::PartialEq;
 use anyhow::*;
 use itertools::Itertools;
-use crate::{Cell, CellArea, Solution};
+use crate::{Cell, GridCell, Solution};
 
 const TEST: &str = "\
 ..............
@@ -54,7 +54,7 @@ struct Vote {
 struct PlayGround {
 
     /// Field content
-    field: CellArea<FieldCell>,
+    field: GridCell<FieldCell>,
 
     /// All the votes (one be location)
     votes: Vec<Vote>,
@@ -113,7 +113,7 @@ impl Cell for FieldCell {
 impl PlayGround {
 
     fn new (content: &[&str]) -> Result<PlayGround> {
-        let field = CellArea::new(content)?.inflated(100);
+        let field = GridCell::new(content)?.inflated(100);
         let votes = vec![Vote::default(); field.width() * field.height()];
 
         Ok(PlayGround { field, votes, current_dir: Direction::North })
@@ -124,7 +124,7 @@ impl PlayGround {
     /// the elves (part a) and `updated` is true if some elf has moved (part b)
     fn resolve_votes (&mut self) -> (usize, bool) {
 
-        let mut new_field = CellArea::<FieldCell>::new_empty(
+        let mut new_field = GridCell::<FieldCell>::new_empty(
             self.field.width(),
             self.field.height()
         );
