@@ -300,7 +300,6 @@ fn part_b_slow (content: &[&str]) -> Result<usize> {
         if intervals.num_disjoints() == 2 {
             let x = intervals [0].1 +1;
             let tuning_freq = x * 4000000 + y;
-            println!("Tuning frequency of {}: {}", x, y);
             return Ok(tuning_freq as usize);
         }
     }

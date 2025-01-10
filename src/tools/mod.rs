@@ -158,6 +158,8 @@ impl<T: Cell> CellArea<T> {
             .take_while(|row| !row.is_empty())
             .map(|line| line.len()).max().unwrap_or(0);
 
+        if width == 0 { bail!("Cell area is empty"); }
+
         let cells = Self::load_cell_from_content(content, width)?;
         let height = cells.len () / width;
 
@@ -168,12 +170,24 @@ impl<T: Cell> CellArea<T> {
         })
     }
 
+    /// New empty area (cell default) of given dimensions `width` and `height`
     pub fn new_empty (width: usize, height: usize) -> CellArea<T> {
         CellArea {
             width,
             height,
             cells: vec![Default::default(); width * height],
         }
+    }
+
+    /// Find the first cell for which the predicate function `f` returns `true`
+    pub fn find_cell<F> (&self, f: F) -> Option<Coo>
+    where F: Fn (&T) -> bool {
+        self.iter_cells().find_map(
+            |(x, y, tile)| match f(tile) {
+                false => None,
+                true  => Some(Coo::from((x, y))),
+            }
+        )
     }
 
     /// Return a copy of this instance with additional margin cells along its 4 sides.
