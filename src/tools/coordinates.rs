@@ -173,3 +173,19 @@ impl Direction {
     }
 }
 
+pub fn find_coo_extents (coos: impl Iterator<Item = Coo>) -> (Coo, Coo) {
+
+    let min_init = Coo { x: isize::MAX, y: isize::MAX };
+    let max_init = Coo { x: isize::MIN, y: isize::MIN };
+
+    let (min, max) = coos.fold((min_init,max_init), |(mut min, mut max), coo| {
+        min.x = min.x.min(coo.x);
+        min.y = min.y.min(coo.y);
+        max.x = max.x.max(coo.x);
+        max.y = max.y.max(coo.y);
+
+        (min, max)
+    });
+
+    (min, max)
+}

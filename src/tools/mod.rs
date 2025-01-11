@@ -6,12 +6,9 @@ mod all_pair_distances;
 mod int_intervals;
 mod grid_cell;
 
-use std::fmt::Display;
-use anyhow::*;
-use itertools::Itertools;
 use num::Integer;
 
-pub use coordinates::{Direction, Coo};
+pub use coordinates::{Direction, Coo, find_coo_extents};
 pub use topo_sort::{TopoSortElement, topo_sort};
 pub use all_pair_distances::*;
 pub use int_intervals::{IntInterval, IntIntervals};
