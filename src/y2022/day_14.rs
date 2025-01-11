@@ -7,6 +7,7 @@ const TEST: &str = "\
 498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9";
 
+/// Models the different kind of tiles
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Tile {
     Rock, Air, Sand
@@ -23,25 +24,14 @@ struct Cave {
     /// Location from where the sand is poured
     source: Coo,
 
-    /// Coordinate where the last bunch of sand stopped
-    last_stop: Coo,
-
     /// Sand counter
     sand_counter: usize,
 
     /// Abyssal void or infinite ground ?
     infinite_ground: bool,
-
-    mound_left: Mound,
-
-    mound_right: Mound,
 }
 
-struct Mound {
-    height: u32,
-    forming: u32
-}
-
+/// Pouring coordinate
 const POUR_COO: Coo = Coo {x: 500, y: 0};
 
 impl Default for Tile {
@@ -62,44 +52,26 @@ fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
 }
 
-impl Mound {
-
-    fn new () -> Mound {
-        Mound {
-            height: 0,
-            forming: 0,
-        }
-    }
-
-    fn add_sand (&mut self) {
-        self.forming += 1;
-        if self.forming > self.height {
-            self.height += 1;
-            self.forming = 0;
-        }
-    }
-}
-
 impl Cave {
 
+    /// New cave instance from puzzle file `content`.
+    /// Parameter `infinite_ground` enables to place a ground at the bottom for question 2
     fn new (content: &[&str], infinite_ground: bool) -> Result<Self> {
 
         let (tiles, source) = Self::load_cave(content);
         let cache_previous = vec! [Coo {x: isize::MAX, y: isize::MAX}; tiles.area()];
-        let last_stop = source;
 
         Ok (Cave {
             tiles,
             source,
             cache_previous,
-            last_stop,
             sand_counter: 0,
             infinite_ground,
-            mound_left: Mound::new(),
-            mound_right: Mound::new()
         })
     }
 
+    /// Pour sand into the cave, until full (question 2) or
+    /// until some sand fall in the abyss (question 1)
     fn pour_sand (&mut self) {
 
         let mut coo_from = self.source;
@@ -108,31 +80,38 @@ impl Cave {
             *self.tiles.sample_mut(coo_stop) = Tile::Sand;
             self.sand_counter += 1;
 
+            // Stop when full
             if coo_stop == self.source { return }
 
+            // Accelerate things by stepping one coordinate back from the last stop position
             let idx = self.index(coo_stop.x, coo_stop.y);
             coo_from = self.cache_previous[idx];
         }
     }
 
+    /// Compute the final coordinate of the trajectory followed by a unit of sand, or return
+    /// `None` if lost into the endless void
     fn trace_trajectory (&mut self, coo: Coo) -> Option<Coo> {
 
         let next = [(0, 1), (-1, 1), (1, 1)];
         let mut p = coo;
         loop {
 
+            // Test the 3 next possible location in sequence
             let mut stopped = true;
             for n in next.iter() {
-
                 let new_p = Coo {x: p.x + n.0, y: p.y + n.1};
 
+                // Blocked by the ground or fallen into the void
                 if self.infinite_ground && new_p.y as usize == self.tiles.height()-1 {
                     return Some(p)
                 }
                 if !self.tiles.is_inside(new_p) { return None }
 
+                // Fall in the air
                 if *self.tiles.sample(new_p) == Tile::Air {
 
+                    // leave a trace behind to quickly restart with the next sand unit
                     let idx = self.index(new_p.x, new_p.y);
                     self.cache_previous [idx] = p;
 
@@ -146,10 +125,13 @@ impl Cave {
         }
     }
 
+    /// Index a coordinate into a unique vector
     fn index (&self, x: isize, y: isize) -> usize {
         self.tiles.width() * y as usize + x as usize
     }
 
+    /// Load the cave from the puzzle file `content`,
+    /// returning the tiles and the pouring coordinate
     fn load_cave (content: &[&str]) -> (GridCell::<Tile>, Coo) {
 
         // Extract the ground coordinates and compute the size of the area
@@ -161,7 +143,8 @@ impl Cave {
         let width = (max.x - min.x) as usize +1;
         let height = (max.y - min.y) as usize +1;
 
-        // Update height to add an infinite ground (question 2)
+        // Update height to add an infinite ground (question 2). We also add margin on
+        // the left and the right to have enough room for the sand to accumulate.
         let height = height +2;
         let min = Coo { x: min.x - height as isize, y: min.y};
         let width = width + 2*height;
@@ -183,6 +166,7 @@ impl Cave {
         (grid, Coo { x: 500-min.x, y: 0-min.y })
     }
 
+    /// Load the vector of coordinates that defines the ground of the cave
     fn load_lines (content: &[&str]) -> Vec<Vec<Coo>> {
 
         let mut reader = IntReader::new(false);
@@ -198,8 +182,6 @@ impl Cave {
         }).collect()
     }
 }
-
-
 
 /// Solve first part of the puzzle
 fn part_a (content: &[&str]) -> Result<usize> {
