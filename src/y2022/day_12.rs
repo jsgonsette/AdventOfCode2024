@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 use anyhow::*;
 use crate::{Cell, GridCell, Solution};
 use crate::tools::{Coo};
@@ -28,30 +26,6 @@ struct Tile {
 struct AreaClimber {
     tiles: GridCell<Tile>,
     end: Coo,
-}
-
-/// Next element to explore with Dijkstra
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
-struct Explore {
-    coo: Coo,
-    score: usize,
-}
-
-/// Dijkstra priority queue
-type PriorityQueue = BinaryHeap<Explore>;
-
-/// Ordering for [Explore] elements in the [PriorityQueue]
-impl Ord for Explore {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other.score.cmp(&self.score)
-    }
-}
-
-/// Ordering for [Explore] elements in the [PriorityQueue]
-impl PartialOrd for Explore {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
 }
 
 impl Default for Tile {
