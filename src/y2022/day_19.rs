@@ -32,6 +32,7 @@ struct Blueprint {
 struct Process {
     minerals: Resources,
     robots: Resources,
+    time_left: u32,
 }
 
 /// The four kinds of minerals and associated robots
@@ -173,6 +174,7 @@ impl Process {
         Process {
             minerals: self.minerals + self.robots - cost,
             robots: self.robots + new_robot,
+            time_left: self.time_left -1,
         }
     }
 }
@@ -197,15 +199,10 @@ fn load_blueprints (content: &[&str]) -> Result<Vec<Blueprint>> {
     }).collect ()
 }
 
-/// Heuristic that checks if it would be possible to build an additional *Geode* robot.
-fn heuristic (_blueprint: &Blueprint, mut _process: Process, mut _time: u32) -> bool {
-   true
-}
-
 /// Move time ahead, step by step, until we have enough resources to build `buy_robot` according
-/// to the `blueprint`, the current `process` state and `time` step.
-/// The function then returns the maximum number of geodes that we can get after this action.
-fn do_next (blueprint: &Blueprint, mut process: Process, mut time: u32, buy_robot: Kind) -> u32 {
+/// to the `blueprint` and the current `process` state. The function then returns the resulting state.
+/// If buying the robot is never possible given the time left, it returns `None`.
+fn try_next (blueprint: &Blueprint, process: &Process, buy_robot: Kind) -> Option<Process> {
 
     // Cost of the robot to build
     let cost = match buy_robot {
@@ -216,72 +213,115 @@ fn do_next (blueprint: &Blueprint, mut process: Process, mut time: u32, buy_robo
     };
 
     // Move time forward until we can buy the robot
-    while time > 0 {
-        time -= 1;
+    let mut next_process = *process;
+    while next_process.time_left > 0 {
 
-        // Buy it as soon as possible and recurse to find what to do next
-        if process.minerals >= cost {
-            process = process.step(blueprint, Some (buy_robot));
-            return solve_max_geodes(blueprint, process, time);
+        // Buy it as soon as possible
+        if next_process.minerals >= cost {
+            next_process = next_process.step(blueprint, Some (buy_robot));
+            return Some (next_process)
         }
         // Otherwise, let produce more resources one step more
         else {
-            process = process.step(blueprint, None);
+            next_process = next_process.step(blueprint, None);
         }
     }
 
     // We get here if we could not perform the requested action before the end
-    process.minerals.geode
+    None
 }
 
-/// Find out the *maximum number of geodes* its is possible to collect, given the `blueprint`,
-/// the current `process` state and the number of `time` steps left.
+/// Optimistic heuristic returning an upper bound of the maximum number of geodes we could
+/// produce given the `blueprint` and current `process` state.
+fn heuristic(blueprint: &Blueprint, process: &Process) -> u32 {
+
+    let mut current = *process;
+    while current.time_left > 0 {
+
+        // Infinite ore, yeah !
+        current.minerals.ore = blueprint.max_cost.ore;
+
+        // Buy geode robot ASAP as they are the most important.
+        if current.minerals >= blueprint.robot_geode_cost {
+            current = current.step(blueprint, Some (Kind::Geode));
+        }
+
+        // Otherwise build Obsidian or Clay robots. Because we have infinite ore, this does
+        // not prevent us to buy Geode robots later
+        else if current.minerals >= blueprint.robot_obsidian_cost {
+            current = current.step(blueprint, Some (Kind::Obsidian));
+        }
+        else {
+            current = current.step(blueprint, Some (Kind::Clay));
+        }
+    }
+
+    current.minerals.geode
+}
+
+/// Find out the *maximum number of geodes* its is possible to collect, given the `blueprint` and
+/// `process_start` state.
 ///
 /// * For any resource kind, having more robots than the maximum price we can pay during a turn
 /// is unproductive. Indeed, we can buy only one robot per turn, so the surplus would be lost
 /// whatever we do. Therefore, some actions are disabled when we have enough robots of the
 /// corresponding category.
 ///
-/// * This function is recursive. However, we try to move forward in time as much as possible
-/// without using recursion (see function [do_next])
+/// * This function work with a DFS queue. For each possible process state, it envisions
+/// the different possible next actions. Those actions correspond to the four
+/// possible robots to buy (see function [try_next])
 ///
 /// * Actions are disabled when we don't have enough time for them to have an impact on the
 /// final number of geodes.
-fn solve_max_geodes (blueprint: &Blueprint, process: Process, time: u32) -> u32 {
+///
+/// * An optimistic heuristic gives an upper bound that enables to drop bad solutions early.
+fn solve_max_geodes (blueprint: &Blueprint, process_start: Process) -> u32 {
 
-    let mut options = [0u32; 4]; // Different results depending on the different options we have
+    let mut max_geodes = 0;
+    let mut dfs_queue = vec! [process_start];
+    while let Some (process) = dfs_queue.pop() {
 
-    // Minimum number of geodes we are sure to get without doing anything
-    let min_geodes = process.minerals.geode + process.robots.geode * time;
+        // Minimum number of geodes we are sure to get without doing anything else.
+        // Record the best solution.
+        let min_geodes = process.minerals.geode + process.robots.geode * process.time_left;
+        max_geodes = max_geodes.max(min_geodes);
 
-    // Use an upper bound heuristic to check we can do better
-    let maybe_improvable = heuristic (blueprint, process, time);
-    if maybe_improvable {
+        // Skip this process state if it is not optimistically possible to do better
+        if heuristic(blueprint, &process) <= max_geodes { continue }
+
         // Try to build an Ore robot next. But only if it makes sense regarding the time left,
         // and only if we have not reached the limit where an additional robot does not help.
-        if process.robots.ore < blueprint.max_cost.ore && time > 3 {
-            options[0] = do_next(blueprint, process, time, Kind::Ore);
+        if process.robots.ore < blueprint.max_cost.ore && process.time_left > 3 {
+            if let Some (next_process) = try_next(blueprint, &process, Kind::Ore) {
+                dfs_queue.push(next_process);
+            }
         }
 
         // Same for the Clay robot,
-        if process.robots.clay < blueprint.max_cost.clay && time > 5 {
-            options[1] = do_next(blueprint, process, time, Kind::Clay);
+        if process.robots.clay < blueprint.max_cost.clay && process.time_left > 5 {
+            if let Some (next_process) = try_next(blueprint, &process, Kind::Clay) {
+                dfs_queue.push(next_process);
+            }
         }
 
         // the obsidian robot,
-        if process.robots.obsidian < blueprint.max_cost.obsidian && time > 3 {
-            options[2] = do_next(blueprint, process, time, Kind::Obsidian);
+        if process.robots.obsidian < blueprint.max_cost.obsidian && process.time_left > 3 {
+            if let Some (next_process) = try_next(blueprint, &process, Kind::Obsidian) {
+                dfs_queue.push(next_process);
+            }
         }
 
         // and the geode robot
-        if time > 1 {
-            options[3] = do_next(blueprint, process, time, Kind::Geode);
+        if process.time_left > 1 {
+            if let Some (next_process) = try_next(blueprint, &process, Kind::Geode) {
+                dfs_queue.push(next_process);
+            }
         }
     }
 
-    // Return the maximum of all those strategies
-    min_geodes.max ( options.into_iter().max().unwrap() )
+    max_geodes
 }
+
 
 fn split (content: &str) -> Vec<&str> {
     content.lines().collect()
@@ -294,10 +334,11 @@ fn part_a (content: &[&str]) -> Result<usize> {
     let process = Process {
         minerals: Default::default(),
         robots: Resources::from_ore(1),
+        time_left: 24,
     };
 
     let quality_level = blueprints.iter ().enumerate ().map (|(idx, blueprint)| {
-        let quality = solve_max_geodes(blueprint, process, 24);
+        let quality = solve_max_geodes(blueprint, process);
         (idx+1) * quality as usize
     }).sum();
 
@@ -311,10 +352,11 @@ fn part_b (content: &[&str]) -> Result<usize> {
     let process = Process {
         minerals: Default::default(),
         robots: Resources::from_ore(1),
+        time_left: 32,
     };
 
     let value = blueprints.iter ().take (3).map ( |blueprint| {
-        let quality = solve_max_geodes(blueprint, process, 32);
+        let quality = solve_max_geodes(blueprint, process);
         quality as usize
     }).product();
 
