@@ -58,29 +58,27 @@ fn split (content: &str) -> Vec<&str> {
 
 impl Monkey {
 
-    /// Drain all the objects from this monkey and return a list of `(monkey, worry level)` pairs
-    fn throw_objects (&mut self, worry_decrease: bool) -> Vec<(usize, WorryItem)> {
+    /// Inspect an `item` and determines how the associated worry evolves and to whom it has
+    /// to be handed over next. The worry is divided by 3 if `worry_decrease` is true.
+    fn inspect_object (&mut self, worry_decrease: bool, item: WorryItem) -> (usize, WorryItem) {
+        self.activity_counter += 1;
 
-        self.activity_counter += self.items.len();
+        let worry = match self.op {
+            Operation::Add(v) => item + v,
+            Operation::Mul(v) => item * v,
+            Operation::Square => item * item,
+        };
 
-        self.items.drain(..).map(|item| {
-            let worry = match self.op {
-                Operation::Add(v) => item + v,
-                Operation::Mul(v) => item * v,
-                Operation::Square => item * item,
-            };
+        let worry = match worry_decrease {
+            true => worry / 3,
+            false => worry,
+        };
 
-            let worry = match worry_decrease {
-                true => worry / 3,
-                false => worry,
-            };
-
-            let tested_worry = (worry % self.test_div) == 0;
-            match tested_worry {
-                false => (self.monkey_false, worry),
-                true => (self.monkey_true, worry),
-            }
-        }).collect()
+        let tested_worry = (worry % self.test_div) == 0;
+        match tested_worry {
+            false => (self.monkey_false, worry),
+            true => (self.monkey_true, worry),
+        }
     }
 }
 
@@ -129,19 +127,60 @@ fn read_monkeys (content: &[&str]) -> Result<Vec<Monkey>> {
     content.chunks(7).map(read_monkey).collect()
 }
 
-/// Simulate a round during which all the `monkeys`, in turn, throw the objects to each others.
-/// Flag `worry_decrease` is `true` for the first question and makes the worry auto-manageable.
-/// `safety_level` (see function [safety_level]) limits the worry for the second question.
-fn round (monkeys: &mut [Monkey], worry_decrease: bool, safety_level: usize) {
+/// Simulate `num_rounds` rounds during which all the `monkeys`, in turn, throw a
+/// single object `worry_start` to each others. This object belongs to the monkey `monkey_start`
+/// at the beginning. Flag `worry_decrease` is `true` for the first question and makes
+/// the worry auto-manageable. `safety_level` (see function [safety_level]) limits
+/// the worry for the second question.
+///
+/// This function uses the principle that all the objects are strictly independents and
+/// do NOT influence each others. We can thus simulate a number of round for each object
+/// independently. The round number is simply decreased when a monkey throw the object to a
+/// monkey coming before in the list.
+fn single_object_rounds (
+    monkeys: &mut [Monkey],
+    worry_decrease: bool,
+    safety_level: usize,
+    worry_start: WorryItem,
+    monkey_start: usize,
+    mut num_rounds: usize,
+) {
 
-    for idx in 0..monkeys.len() {
-        let monkey = &mut monkeys[idx];
-        let thrown = monkey.throw_objects(worry_decrease);
+    let mut monkey_idx = monkey_start;
+    let mut worry = worry_start;
+    while num_rounds > 0 {
+        let (next_monkey_idx, next_worry) =
+            monkeys[monkey_idx].inspect_object(worry_decrease, worry);
 
-        for (monkey_idx, object) in thrown {
-            monkeys [monkey_idx].items.push(object % safety_level);
-        }
+        if next_monkey_idx < monkey_idx { num_rounds -= 1; }
+        monkey_idx = next_monkey_idx;
+        worry = next_worry % safety_level;
     }
+}
+
+/// Execute a dance of `num_rounds` rounds, during which the monkey will exchange the objets.
+/// Parameter `worry_decrease` is true for the first question, false for the second.
+fn dance (monkeys: &mut [Monkey], num_rounds: usize, worry_decrease: bool,) -> Result<usize> {
+
+    let safety_level = safety_level(monkeys);
+
+    // Gather all the objects and with which monkey they start the rounds
+    let objects: Vec<(usize, WorryItem)> = monkeys.iter().enumerate ().flat_map(|(idx, monkey)| {
+        monkey.items.iter().map (move |&item| (idx, item))
+    }).collect ();
+
+    // Process the different objects independently
+    for (monkey_idx, item) in objects {
+        single_object_rounds(monkeys, worry_decrease, safety_level, item, monkey_idx, num_rounds);
+    }
+
+    // Sort the monkeys by activity level
+    monkeys.sort_unstable_by_key( |monkey| monkey.activity_counter);
+    let activity = monkeys.last_chunk::<2>().and_then(
+        |[a, b]| Some (a.activity_counter * b.activity_counter)
+    );
+
+    activity.ok_or(anyhow!("Not enough monkeys"))
 }
 
 /// Multiply together all the prime numbers used by the monkeys to make their inspection test.
@@ -155,31 +194,17 @@ fn safety_level (monkeys: &[Monkey]) -> usize {
 fn part_a (content: &[&str]) -> Result<usize> {
 
     let mut monkeys = read_monkeys(content)?;
-    let safety_level = safety_level(&mut monkeys);
-    for _ in 0.. 20 { round(&mut monkeys, true, safety_level); }
-
-    monkeys.sort_unstable_by_key( |monkey| monkey.activity_counter);
-    let activity = monkeys.last_chunk::<2>().and_then(
-        |[a, b]| Some (a.activity_counter * b.activity_counter)
-    );
-    activity.ok_or(anyhow!("Not enough monkeys"))
+    dance (&mut monkeys, 20, true)
 }
 
 /// Solve second part of the puzzle
 fn part_b (content: &[&str]) -> Result<usize> {
 
     let mut monkeys = read_monkeys(content)?;
-    let safety_level = safety_level(&mut monkeys);
-    for _ in 0.. 10000 { round(&mut monkeys, false, safety_level); }
-
-    monkeys.sort_unstable_by_key( |monkey| monkey.activity_counter);
-    let activity = monkeys.last_chunk::<2>().and_then(
-        |[a, b]| Some (a.activity_counter * b.activity_counter)
-    );
-    activity.ok_or(anyhow!("Not enough monkeys"))
+    dance (&mut monkeys, 10000, false)
 }
 
-pub fn day_11 (content: &[&str]) -> Result <(Solution, Solution)> {
+pub fn  day_11 (content: &[&str]) -> Result <(Solution, Solution)> {
 
     debug_assert!(part_a (&split(TEST)).unwrap_or_default() == 10605);
     debug_assert!(part_b (&split(TEST)).unwrap_or_default() == 2713310158);
