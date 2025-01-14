@@ -18,6 +18,7 @@ use crate::benchmark::{benchmark_year, make_svg, BenchmarkResult};
 use crate::y2023::Y2023;
 
 pub use tools::{Cell, GridCell};
+use crate::tools::BitSet;
 
 /// https://www.maurits.vdschee.nl/scatterplot/
 
@@ -54,13 +55,23 @@ impl Display for Solution {
 
 fn main() -> Result<()> {
 
-    solve_year(Y2022, 19..20);
-    solve_year(Y2023, 10..10);
-    solve_year(Y2024, 23..23);
+    let mut a = BitSet::zeros(16);
+    let mut b = BitSet::ones(16);
 
-    let result = benchmark_year(&Y2022, 100);
+    let c = &a ^ &b;
+    a |= &b;
+
+    println!("{}, {}, {}", a, b, c);
+    //let d = a | b;
+
+
+    /*solve_year(Y2022, 19..20);
+    solve_year(Y2023, 10..10);
+    solve_year(Y2024, 23..23);*/
+
+/*    let result = benchmark_year(&Y2022, 100);
     print_benchmark_result(Y2022, &result);
-    make_svg(&result, "./out/perfo-2022.svg");
+    make_svg(&result, "./out/perfo-2022.svg");*/
 
     Ok(())
 }
