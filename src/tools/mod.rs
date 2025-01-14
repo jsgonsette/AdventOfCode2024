@@ -5,6 +5,7 @@ mod cycle_detector;
 mod all_pair_distances;
 mod int_intervals;
 mod grid_cell;
+mod bit_set;
 mod array_set;
 
 use num::Integer;
@@ -15,6 +16,7 @@ pub use all_pair_distances::*;
 pub use int_intervals::{IntInterval, IntIntervals};
 pub use grid_cell::{Cell, GridCell};
 pub use array_set::ArraySet;
+pub use bit_set::BitSet;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Sign { Positive, Negative }
