@@ -260,6 +260,7 @@ impl<T: Cell> GridCell<T> {
         })
     }
 
+    /// Return a flat 1D coordinate
     fn index (&self, coo: &Coo) -> usize {
         coo.y as usize * self.width + coo.x as usize
     }

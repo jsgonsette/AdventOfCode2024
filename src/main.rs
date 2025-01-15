@@ -10,7 +10,7 @@ use anyhow::*;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::ops::RangeBounds;
+use std::ops::{RangeBounds, Shl};
 use std::result::Result::Ok;
 use std::time::Duration;
 use itertools::Itertools;
@@ -53,25 +53,16 @@ impl Display for Solution {
     }
 }
 
+
 fn main() -> Result<()> {
 
-    let mut a = BitSet::zeros(16);
-    let mut b = BitSet::ones(16);
-
-    let c = &a ^ &b;
-    a |= &b;
-
-    println!("{}, {}, {}", a, b, c);
-    //let d = a | b;
-
-
-    /*solve_year(Y2022, 19..20);
+    solve_year(Y2022, 23..24);
     solve_year(Y2023, 10..10);
-    solve_year(Y2024, 23..23);*/
+    solve_year(Y2024, 23..23);
 
-/*    let result = benchmark_year(&Y2022, 100);
+    let result = benchmark_year(&Y2022, 100);
     print_benchmark_result(Y2022, &result);
-    make_svg(&result, "./out/perfo-2022.svg");*/
+    make_svg(&result, "./out/perfo-2022.svg");
 
     Ok(())
 }
